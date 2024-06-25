@@ -38,13 +38,13 @@ def main():
 
         if page == "User Page":
             st.write("User Page Content")
-            exec(open("pages/user.py").read())
+            exec(open("pages/Gdrive.py").read())
         elif page == "Admin Page":
             st.write("Admin Page Content")
-            exec(open("pages/admin.py").read())
+            exec(open("pages/SFTP.py").read())
         elif page == "Super Admin Page":
             st.write("Super Admin Page Content")
-            exec(open("pages/super-admin.py").read())
+            exec(open("pages/Prompts.py").read())
 
 if __name__ == "__main__":
     main()
