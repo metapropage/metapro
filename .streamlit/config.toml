@@ -11,3 +11,6 @@ enableWebsocketCompression = true
 enableCORS = false
 maxMessageSize = 800
 maxUploadSize = 800
+headless = true
+port = 8501
+
