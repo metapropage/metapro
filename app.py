@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+from datetime import datetime, timedelta
 
 # Assuming the menu function is defined in a module named 'menu'
 from menu import menu
@@ -12,7 +13,7 @@ st.markdown("""
         }
         section[data-testid="stSidebar"] {
             top: 0;
-            height: 10vh;
+            height: 100vh;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -46,15 +47,23 @@ def check_lock():
     lock_file = "lock.txt"
     if os.path.exists(lock_file):
         with open(lock_file, 'r') as file:
-            status = file.read()
-        return status == "logged_in"
+            data = file.read().split(',')
+            status = data[0]
+            timestamp = datetime.strptime(data[1], '%Y-%m-%d %H:%M:%S')
+            if status == "logged_in":
+                # Check if the lock is older than 30 days
+                if datetime.now() - timestamp > timedelta(days=30):
+                    os.remove(lock_file)
+                    return False
+                return True
     return False
 
 # Function to set lock file
 def set_lock(status):
     lock_file = "lock.txt"
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     with open(lock_file, 'w') as file:
-        file.write(status)
+        file.write(f"{status},{timestamp}")
 
 # If the user is not authenticated, show the login form
 if not st.session_state.authenticated:
