@@ -4,7 +4,6 @@ import tempfile
 from PIL import Image
 import google.generativeai as genai
 import iptcinfo3
-import zipfile
 import time
 import traceback
 import re
@@ -108,43 +107,6 @@ def embed_metadata(image_path, metadata, progress_bar, files_processed, total_fi
         st.error(f"An error occurred while embedding metadata: {e}")
         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
 
-def zip_processed_images(image_paths):
-    try:
-        zip_file_path = os.path.join(tempfile.gettempdir(), 'processed_images.zip')
-
-        with zipfile.ZipFile(zip_file_path, 'w') as zipf:
-            for image_path in image_paths:
-                zipf.write(image_path, arcname=os.path.basename(image_path))
-
-        return zip_file_path
-
-    except Exception as e:
-        st.error(f"An error occurred while zipping images: {e}")
-        st.error(traceback.format_exc())
-        return None
-
-def upload_to_drive(zip_file_path, credentials):
-    try:
-        service = build('drive', 'v3', credentials=credentials)
-        file_metadata = {
-            'name': os.path.basename(zip_file_path),
-            'mimeType': 'application/zip'
-        }
-        media = MediaFileUpload(zip_file_path, mimetype='application/zip', resumable=True)
-        file = service.files().create(body=file_metadata, media_body=media, fields='id,webViewLink').execute()
-
-        # Make the file publicly accessible
-        service.permissions().create(
-            fileId=file['id'],
-            body={'type': 'anyone', 'role': 'reader'}
-        ).execute()
-
-        return file.get('webViewLink')
-    except Exception as e:
-        st.error(f"An error occurred while uploading to Google Drive: {e}")
-        st.error(traceback.format_exc())
-        return None
-
 def generate_description(model, img):
     description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
     return description.text.strip()
@@ -159,17 +121,6 @@ def main():
     # Add elements to the sidebar
     st.sidebar.title("Sidebar Title")
     st.sidebar.write("Sidebar content goes here")
-
-    # Logout button
-    if st.sidebar.button("Logout"):
-        st.session_state.clear()
-        st.session_state['logout_success'] = True
-        st.experimental_rerun()
-
-    # Redirect to app.py if logged out
-    if st.session_state.get('logout_success'):
-        st.success("Successfully logged out.")
-        st.stop()  # Stop execution to prevent further rendering
 
     # Display WhatsApp chat link
     st.markdown("""
@@ -305,19 +256,12 @@ def main():
                                     # Update progress bar and current file number
                                     progress_bar.progress(files_processed / total_files)
 
-                            # Zip processed images
-                            zip_file_path = zip_processed_images(processed_image_paths)
-
-                            if zip_file_path:
-                                st.success(f"Successfully zipped processed {zip_file_path}")
-
-                                # Upload zip file to Google Drive and get the shareable link
-                                credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=['https://www.googleapis.com/auth/drive.file'])
-                                drive_link = upload_to_drive(zip_file_path, credentials)
-
-                                if drive_link:
-                                    st.success("File uploaded to Google Drive successfully!")
-                                    st.markdown(f"[Download processed images from Google Drive]({drive_link})")
+                            # Display the generated titles and tags
+                            st.markdown("## Generated Titles and Tags")
+                            for i, metadata in enumerate(metadata_list):
+                                st.write(f"**Image {i + 1}**")
+                                st.write(f"**Title:** {metadata['Title']}")
+                                st.write(f"**Tags:** {metadata['Tags']}")
 
                             # Generate and display MidJourney prompt texts and thumbnails
                             st.markdown("## Generated MidJourney Prompts")
