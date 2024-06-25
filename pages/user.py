@@ -25,25 +25,7 @@ menu_with_redirect()
 # Set the timezone to UTC+7 Jakarta
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
 
-# Function to check if lock file exists and its content
-def check_lock():
-    lock_file = "lock.txt"
-    if os.path.exists(lock_file):
-        with open(lock_file, 'r') as file:
-            content = file.read().strip()
-            return content == "logged_in"
-    return False
-
-# Function to set lock file
-def set_lock(status):
-    lock_file = "lock.txt"
-    with open(lock_file, 'w') as file:
-        file.write(status)
-
-# Initialize session state for login and license validation
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
-
+# Initialize session state for license validation
 if 'license_validated' not in st.session_state:
     st.session_state['license_validated'] = False
 
@@ -160,41 +142,6 @@ def format_midjourney_prompt(description):
 
 def main():
     """Main function for the Streamlit app."""
-
-    # Check if user is logged in
-    if not st.session_state['logged_in']:
-        # Display login form
-        st.title("Gdrive")
-        username = st.text_input("Username")
-        password = st.text_input("Password", type='password')
-
-        if st.button("Login"):
-            # Validate login credentials
-            correct_username = "user"
-            correct_password = "dian"
-
-            if username == correct_username and password == correct_password:
-                if check_lock():
-                    st.error("Another user is currently logged in. Please try again later.")
-                else:
-                    st.session_state['logged_in'] = True
-                    set_lock("logged_in")
-                    st.success("Login successful! Please click the login button once more.")
-            else:
-                st.error("Invalid username or password.")
-        return
-
-    # Display logout button
-    if st.button("Logout"):
-        st.session_state['logged_in'] = False
-        set_lock("")
-        st.success("Logged out successfully.")
-        return
-
-    # Check lock file before proceeding
-    if not check_lock():
-        st.error("Access denied. Your MetaPro Basic Plan subscription is limited to only one device.")
-        return
 
     # Display WhatsApp chat link
     st.markdown("""
