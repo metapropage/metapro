@@ -129,6 +129,14 @@ def main():
     st.sidebar.title("Sidebar Title")
     st.sidebar.write("Sidebar content goes here")
     
+    # Logout button in the sidebar
+    if st.sidebar.button("Logout"):
+        st.session_state.authenticated = False
+        st.session_state.role = None
+        set_lock("")
+        st.success("Logged out successfully.")
+        st.experimental_rerun()
+
     # Initialize session state for license validation
     if 'license_validated' not in st.session_state:
         st.session_state['license_validated'] = False
