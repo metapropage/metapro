@@ -143,6 +143,23 @@ def format_midjourney_prompt(description):
 def main():
     """Main function for the Streamlit app."""
 
+    # Apply custom styling
+st.markdown("""
+    <style>
+        #MainMenu, header, footer {
+            visibility: hidden;
+        }
+        section[data-testid="stSidebar"] {
+            top: 0;
+            height: 10vh;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+# Add elements to the sidebar
+st.sidebar.title("Sidebar Title")
+st.sidebar.write("Sidebar content goes here")
+
     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
