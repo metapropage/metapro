@@ -12,7 +12,7 @@ st.markdown("""
         }
         section[data-testid="stSidebar"] div:first-child {
             top: 0;
-            height: 10vh;
+            height: 100vh;
         }
     </style>
     """, unsafe_allow_html=True)
