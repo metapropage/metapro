@@ -17,55 +17,9 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 import paramiko
-from menu import menu_with_redirect
-
-st.set_option("client.showSidebarNavigation", False)
-
-# Redirect to app.py if not logged in, otherwise show the navigation menu
-menu_with_redirect()
 
 # Set the timezone to UTC+7 Jakarta
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
-
-# Function to check if lock file exists and its content
-def check_lock():
-    lock_file = "lock.txt"
-    if os.path.exists(lock_file):
-        with open(lock_file, 'r') as file:
-            content = file.read().strip()
-            return content == "logged_in"
-    return False
-
-# Function to set lock file
-def set_lock(status):
-    lock_file = "lock.txt"
-    with open(lock_file, 'w') as file:
-        file.write(status)
-
-# Initialize session state for login and license validation
-if 'logged_in' not in st.session_state:
-    st.session_state['logged_in'] = False
-
-if 'license_validated' not in st.session_state:
-    st.session_state['license_validated'] = False
-
-if 'upload_count' not in st.session_state:
-    st.session_state['upload_count'] = {
-        'date': None,
-        'count': 0
-    }
-
-if 'api_key' not in st.session_state:
-    st.session_state['api_key'] = None
-
-if 'sftp_username' not in st.session_state:
-    st.session_state['sftp_username'] = "209940897"
-
-if 'title_prompt' not in st.session_state:
-    st.session_state['title_prompt'] = ("Create a descriptive title in English up to 12 words long. Ensure the keywords accurately reflect the subject matter, context, and main elements of the image, using precise terms that capture unique aspects like location, activity, or theme for specificity. Maintain variety and consistency in keywords relevant to the image content. Avoid using brand names or copyrighted elements in the title.")
-
-if 'tags_prompt' not in st.session_state:
-    st.session_state['tags_prompt'] = ("Generate up to 49 keywords relevant to the image (each keyword must be one word, separated by commas). Avoid using brand names or copyrighted elements in the keywords.")
 
 # Function to generate metadata for images using AI model
 def generate_metadata(model, img):
@@ -151,56 +105,42 @@ def sftp_upload(image_path, sftp_username, sftp_password, progress_placeholder, 
 
 def main():
     """Main function for the Streamlit app."""
-
-    # Check if user is logged in
-    if not st.session_state['logged_in']:
-        # Display login form
-        # Use custom HTML and CSS to style the title
-        st.markdown("""
+    
+    # Apply custom styling
+    st.markdown("""
     <style>
-    .small-title {
-        font-size: 1.5em; /* Adjust the size as needed */
-    }
+        #MainMenu, header, footer {visibility: hidden;}
+        section[data-testid="stSidebar"] div:first-child {top: 0; height: 100vh;}
     </style>
-    <h1 class="small-title">Login</h1>
     """, unsafe_allow_html=True)
 
-        username = st.text_input("Username")
-        password = st.text_input("Password", type='password')
+    # Initialize session state for license validation
+    if 'license_validated' not in st.session_state:
+        st.session_state['license_validated'] = False
 
-        if st.button("Login"):
-            # Validate login credentials
-            correct_username = "dian"
-            correct_password = "trial"
+    if 'upload_count' not in st.session_state:
+        st.session_state['upload_count'] = {
+            'date': None,
+            'count': 0
+        }
 
-            if username == correct_username and password == correct_password:
-                if check_lock():
-                    st.error("Another user is currently logged in. Please try again later.")
-                else:
-                    st.session_state['logged_in'] = True
-                    set_lock("logged_in")
-                    st.success("Login successful! Please click the login button once more.")
-            else:
-                st.error("Invalid username or password.")
-        return
+    if 'api_key' not in st.session_state:
+        st.session_state['api_key'] = None
+
+    if 'sftp_username' not in st.session_state:
+        st.session_state['sftp_username'] = "209940897"
+
+    if 'title_prompt' not in st.session_state:
+        st.session_state['title_prompt'] = ("Create a descriptive title in English up to 12 words long. Ensure the keywords accurately reflect the subject matter, context, and main elements of the image, using precise terms that capture unique aspects like location, activity, or theme for specificity. Maintain variety and consistency in keywords relevant to the image content. Avoid using brand names or copyrighted elements in the title.")
+
+    if 'tags_prompt' not in st.session_state:
+        st.session_state['tags_prompt'] = ("Generate up to 49 keywords relevant to the image (each keyword must be one word, separated by commas). Avoid using brand names or copyrighted elements in the keywords.")
 
     # Display "About" button at the top
     if st.button("About"):
         st.markdown("""
         ### Why Choose MetaPro?
         """)
-
-    # Check logout at the end
-    if st.button("Logout"):
-        st.session_state['logged_in'] = False
-        set_lock("")
-        st.success("Logged out successfully.")
-        return
-
-    # Check lock file before proceeding
-    if not check_lock():
-        st.error("Access denied. Your MetaPro Basic Plan subscription is limited to only one device.")
-        return
 
     # Display WhatsApp chat link
     st.markdown("""
