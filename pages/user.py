@@ -22,7 +22,10 @@ st.set_option("client.showSidebarNavigation", False)
 # Redirect to app.py if not logged in, otherwise show the navigation menu
 menu_with_redirect()
 
-    # Apply custom styling
+# Assuming the menu function is defined in a module named 'menu'
+from menu import menu
+
+# Apply custom styling
 st.markdown("""
     <style>
         #MainMenu, header, footer {
@@ -30,7 +33,7 @@ st.markdown("""
         }
         section[data-testid="stSidebar"] {
             top: 0;
-            height: 10vh;
+            height: 100vh;
         }
     </style>
     """, unsafe_allow_html=True)
