@@ -16,6 +16,7 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 
+
 st.set_option("client.showSidebarNavigation", False)
 
 # Redirect to app.py if not logged in, otherwise show the navigation menu
