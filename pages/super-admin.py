@@ -3,11 +3,8 @@ import os
 import tempfile
 from PIL import Image
 import google.generativeai as genai
-import re
-import unicodedata
-from datetime import datetime, timedelta
 import pytz
-import traceback
+from datetime import datetime, timedelta
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -27,7 +24,7 @@ st.markdown("""
 # Set the timezone to UTC+7 Jakarta
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
 
-# Initialize session state for license validation
+# Initialize session state
 if 'license_validated' not in st.session_state:
     st.session_state['license_validated'] = False
 
@@ -39,11 +36,6 @@ if 'upload_count' not in st.session_state:
 
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
-
-# Function to normalize and clean text
-def normalize_text(text):
-    normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
-    return normalized
 
 # Function to generate detailed descriptions for files using AI model
 def generate_description(model, file_path):
@@ -66,18 +58,14 @@ def main():
         else:
             # License key input
             validation_key = st.text_input('License Key', type='password')
-
-    # Check if validation key is correct
-    correct_key = "dian12345"
-
-    if not st.session_state['license_validated'] and validation_key:
-        if validation_key == correct_key:
-            st.session_state['license_validated'] = True
-            start_date = datetime.now(JAKARTA_TZ)
-            with open(license_file, 'w') as file:
-                file.write(start_date.isoformat())
-        else:
-            st.error("Invalid validation key. Please enter the correct key.")
+            correct_key = "dian12345"
+            if validation_key and validation_key == correct_key:
+                st.session_state['license_validated'] = True
+                start_date = datetime.now(JAKARTA_TZ)
+                with open(license_file, 'w') as file:
+                    file.write(start_date.isoformat())
+            elif validation_key:
+                st.error("Invalid validation key. Please enter the correct key.")
 
     if st.session_state['license_validated']:
         # Check the license file for the start date
@@ -98,75 +86,62 @@ def main():
 
         # API Key input
         api_key = st.text_input('Enter your API Key', value=st.session_state['api_key'] or '')
-
-        # Save API key in session state
         if api_key:
             st.session_state['api_key'] = api_key
 
         # Upload image files
         uploaded_files = st.file_uploader('Upload Images (JPG, PNG, SVG, EPS supported)', accept_multiple_files=True)
+        if uploaded_files and st.button("Process"):
+            with st.spinner("Processing..."):
+                try:
+                    # Check and update upload count for the current date
+                    if st.session_state['upload_count']['date'] != current_date.date():
+                        st.session_state['upload_count'] = {
+                            'date': current_date.date(),
+                            'count': 0
+                        }
 
-        if uploaded_files:
-            valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/png', 'image/svg+xml', 'image/eps']]
-            invalid_files = [file for file in uploaded_files if file not in valid_files]
+                    # Check if remaining uploads are available
+                    if st.session_state['upload_count']['count'] + len(uploaded_files) > 50:
+                        remaining_uploads = 50 - st.session_state['upload_count']['count']
+                        st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
+                        return
+                    else:
+                        st.session_state['upload_count']['count'] += len(uploaded_files)
+                        st.success(f"Uploads successful. Remaining uploads for today: {50 - st.session_state['upload_count']['count']}")
 
-            if invalid_files:
-                st.error("Only JPG, PNG, SVG, and EPS files are supported.")
+                    genai.configure(api_key=api_key)  # Configure AI model with API key
+                    model = genai.GenerativeModel('gemini-pro-vision')
 
-            if valid_files and st.button("Process"):
-                with st.spinner("Processing..."):
-                    try:
-                        # Check and update upload count for the current date
-                        if st.session_state['upload_count']['date'] != current_date.date():
-                            st.session_state['upload_count'] = {
-                                'date': current_date.date(),
-                                'count': 0
-                            }
+                    # Create a temporary directory to store the uploaded images
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        # Save the uploaded images to the temporary directory
+                        file_paths = []
+                        for file in uploaded_files:
+                            temp_file_path = os.path.join(temp_dir, file.name)
+                            with open(temp_file_path, 'wb') as f:
+                                f.write(file.read())
+                            file_paths.append(temp_file_path)
 
-                        # Check if remaining uploads are available
-                        if st.session_state['upload_count']['count'] + len(valid_files) > 50:
-                            remaining_uploads = 50 - st.session_state['upload_count']['count']
-                            st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
-                            return
-                        else:
-                            st.session_state['upload_count']['count'] += len(valid_files)
-                            st.success(f"Uploads successful. Remaining uploads for today: {50 - st.session_state['upload_count']['count']}")
+                        # Process each file and generate detailed descriptions using AI
+                        descriptions = []
+                        for i, file_path in enumerate(file_paths):
+                            st.text(f"Generating description for file {i + 1}/{len(file_paths)}")
+                            try:
+                                description = generate_description(model, file_path)
+                                descriptions.append((os.path.basename(file_path), description))
+                            except Exception as e:
+                                st.error(f"An error occurred while generating description for {os.path.basename(file_path)}: {e}")
+                                continue
 
-                        genai.configure(api_key=api_key)  # Configure AI model with API key
-                        model = genai.GenerativeModel('gemini-pro-vision')
+                        # Display the generated descriptions
+                        st.markdown("## Generated Descriptions")
+                        for file_name, description in descriptions:
+                            st.markdown(f"**File Name:** {file_name}")
+                            st.markdown(f"**Description:** {description}")
 
-                        # Create a temporary directory to store the uploaded images
-                        with tempfile.TemporaryDirectory() as temp_dir:
-                            # Save the uploaded images to the temporary directory
-                            file_paths = []
-                            for file in valid_files:
-                                temp_file_path = os.path.join(temp_dir, file.name)
-                                with open(temp_file_path, 'wb') as f:
-                                    f.write(file.read())
-                                file_paths.append(temp_file_path)
-
-                            # Process each file and generate detailed descriptions using AI
-                            descriptions = []
-                            process_placeholder = st.empty()
-                            for i, file_path in enumerate(file_paths):
-                                process_placeholder.text(f"Generating description for file {i + 1}/{len(file_paths)}")
-                                try:
-                                    description = generate_description(model, file_path)
-                                    descriptions.append((os.path.basename(file_path), description))
-                                except Exception as e:
-                                    st.error(f"An error occurred while generating description for {os.path.basename(file_path)}: {e}")
-                                    st.error(traceback.format_exc())
-                                    continue
-
-                            # Display the generated descriptions
-                            st.markdown("## Generated Descriptions")
-                            for file_name, description in descriptions:
-                                st.markdown(f"**File Name:** {file_name}")
-                                st.markdown(f"**Description:** {description}")
-
-                    except Exception as e:
-                        st.error(f"An error occurred: {e}")
-                        st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
 
 if __name__ == '__main__':
     main()
