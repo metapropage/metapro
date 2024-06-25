@@ -4,13 +4,13 @@ import os
 # Assuming the menu function is defined in a module named 'menu'
 from menu import menu
 
-    # Apply custom styling
-    st.markdown("""
-    <style>
-        #MainMenu, header, footer {visibility: hidden;}
-        section[data-testid="stSidebar"] div:first-child {top: 0; height: 100vh;}
-    </style>
-    """, unsafe_allow_html=True)
+# Apply custom styling
+st.markdown("""
+<style>
+    #MainMenu, header, footer {visibility: hidden;}
+    section[data-testid="stSidebar"] div:first-child {top: 0; height: 100vh;}
+</style>
+""", unsafe_allow_html=True)
 
 # Predefined username and password (for demonstration purposes)
 USERNAME = "admin"
