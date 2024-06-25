@@ -69,6 +69,14 @@ if st.session_state.authenticated:
         # Callback function to save the role selection to Session State
         st.session_state.role = st.session_state._role
 
+    # Selectbox to choose role
+    st.selectbox(
+        "Select your role:",
+        ["super-admin"],
+        key="_role",
+        on_change=set_role,
+    )
+
     menu()  # Render the dynamic menu
 
     # Logout button in the sidebar
