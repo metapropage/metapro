@@ -153,19 +153,23 @@ def format_midjourney_prompt(description):
     prompt_text = f"{description} -ar 16:9"
     return prompt_text
 
-# Function to set lock status
-def set_lock(status):
-    lock_file = "lock.txt"
-    with open(lock_file, 'w') as file:
-        file.write(status)
-
-# Main function for the Streamlit app
 def main():
     """Main function for the Streamlit app."""
 
     # Add elements to the sidebar
     st.sidebar.title("Sidebar Title")
     st.sidebar.write("Sidebar content goes here")
+
+    # Logout button
+    if st.sidebar.button("Logout"):
+        st.session_state.clear()
+        st.session_state['logout_success'] = True
+        st.experimental_rerun()
+
+    # Redirect to app.py if logged out
+    if st.session_state.get('logout_success'):
+        st.success("Successfully logged out.")
+        st.stop()  # Stop execution to prevent further rendering
 
     # Display WhatsApp chat link
     st.markdown("""
@@ -177,13 +181,6 @@ def main():
         </a>
     </div>
     """, unsafe_allow_html=True)
-
-    # Add a logout button to the sidebar
-    if st.sidebar.button("Logout"):
-        st.session_state.authenticated = False
-        set_lock("")
-        st.success("Logged out successfully.")
-        st.experimental_rerun()
 
     # Check if license has already been validated
     license_file = "license.txt"
