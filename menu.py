@@ -1,21 +1,36 @@
 import streamlit as st
 
-def display_menu():
-    st.sidebar.title("Navigation")
 
-    # Link to Home (app.py)
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Main Pages")
-    st.sidebar.page_config("app.py", label="Home")
-    st.sidebar.page_config("pages/about.py", label="About")
+def authenticated_menu():
+    # Show a navigation menu for authenticated users
+    st.sidebar.page_link("app.py", label="Home")
+    st.sidebar.page_link("pages/user.py", label="Upload via Gdrive")
+    if st.session_state.role in ["admin", "super-admin"]:
+        st.sidebar.page_link("pages/admin.py", label="Upload via SFTP")
+        st.sidebar.page_link(
+            "pages/super-admin.py",
+            label="Describe Midjourney Prompts",
+            disabled=st.session_state.role != "super-admin",
+        )
 
-    # Links to User Pages
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("User Pages")
-    st.sidebar.page_config("pages/user.py", label="Upload via Gdrive")
-    
-    # Links to Admin Pages
-    st.sidebar.markdown("---")
-    st.sidebar.subheader("Admin Pages")
-    st.sidebar.page_config("pages/admin.py", label="Admin Page")
-    st.sidebar.page_config("pages/super-admin.py", label="Super Admin Page")
+
+def unauthenticated_menu():
+    # Show a navigation menu for unauthenticated users
+    st.sidebar.page_link("app.py", label="Log in")
+
+
+def menu():
+    # Determine if a user is logged in or not, then show the correct
+    # navigation menu
+    if "role" not in st.session_state or st.session_state.role is None:
+        unauthenticated_menu()
+        return
+    authenticated_menu()
+
+
+def menu_with_redirect():
+    # Redirect users to the main page if not logged in, otherwise continue to
+    # render the navigation menu
+    if "role" not in st.session_state or st.session_state.role is None:
+        st.switch_page("app.py")
+    menu()
