@@ -64,47 +64,47 @@ if not st.session_state.authenticated:
 
 # If authenticated, show the role selection and menu
 if st.session_state.authenticated:
-    # Retrieve the role from Session State to initialize the widget
-    st.session_state._role = st.session_state.role
+    st.title("Dashboard")
+    
+    def set_role(role):
+        st.session_state.role = role
 
-    def set_role():
-        # Callback function to save the role selection to Session State
-        st.session_state.role = st.session_state._role
-
-    # Selectbox to choose role
-    st.selectbox(
-        "Select your role:",
-        ["super-admin"],
-        key="_role",
-        on_change=set_role,
-    )
-
+    # Button to choose super-admin role
+    if st.button("Pilih peran sebagai super-admin"):
+        set_role("super-admin")
+        st.success("Peran 'super-admin' telah dipilih.")
+    
+    # Display the selected role if already set
+    if st.session_state.role:
+        st.write(f"Peran Anda saat ini: {st.session_state.role}")
+    
     menu()  # Render the dynamic menu
 
     # Logout button in the sidebar
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
+        st.session_state.role = None
         set_lock("")
-        st.success("Logged out successfully.")
+        st.success("Berhasil keluar.")
 
     # Additional Information
-    st.markdown("### Why Choose MetaPro?")
+    st.markdown("### Mengapa Memilih MetaPro?")
     st.markdown("""
-    **AI-Powered Precision:** Leverage the power of Google Generative AI to automatically generate highly relevant and descriptive titles and tags for your images. Enhance your image metadata with unprecedented accuracy and relevance.
+    **AI-Powered Precision:** Manfaatkan kekuatan Google Generative AI untuk secara otomatis menghasilkan judul dan tag yang sangat relevan dan deskriptif untuk gambar Anda. Tingkatkan metadata gambar Anda dengan akurasi dan relevansi yang belum pernah ada sebelumnya.
 
-    **Streamlined Workflow:** Upload your images in just a few clicks. Our app processes each photo, embeds the generated metadata, and prepares it for upload—automatically and effortlessly.
+    **Alur Kerja yang Efisien:** Unggah gambar Anda hanya dengan beberapa klik. Aplikasi kami memproses setiap foto, menyematkan metadata yang dihasilkan, dan menyiapkannya untuk diunggah—secara otomatis dan mudah.
 
-    **Secure and Efficient Gdrive Upload:** Once processed, your images are securely uploaded to Google Drive. Keep your workflow smooth and your data safe with our robust upload system.
+    **Upload Gdrive yang Aman dan Efisien:** Setelah diproses, gambar Anda diunggah dengan aman ke Google Drive. Jaga alur kerja Anda tetap lancar dan data Anda aman dengan sistem upload kami yang kuat.
 
-    **How It Works:**
-    1. **Upload Your Images:** Drag and drop your JPG/JPEG files into the uploader.
-    2. **Generate Metadata:** Watch as the app uses AI to create descriptive titles and relevant tags.
-    3. **Embed Metadata:** The app embeds the metadata directly into your images.
-    4. **Directly upload to Google Drive for faster downloads.**
+    **Cara Kerjanya:**
+    1. **Unggah Gambar Anda:** Seret dan lepas file JPG/JPEG Anda ke pengunggah.
+    2. **Hasilkan Metadata:** Lihat bagaimana aplikasi menggunakan AI untuk membuat judul deskriptif dan tag yang relevan.
+    3. **Sematkan Metadata:** Aplikasi menyematkan metadata langsung ke dalam gambar Anda.
+    4. **Unggah langsung ke Google Drive untuk pengunduhan lebih cepat.**
 
-    **Subscribe Now and Experience the Difference:**
-    - **MetaPro Basic Plan:** $10 for 3 months – Upload up to 1,000 images daily.
-    - **MetaPro Premium Plan:** $40 for unlimited image uploads for a lifetime.
+    **Berlangganan Sekarang dan Rasakan Perbedaannya:**
+    - **Paket MetaPro Basic:** $10 untuk 3 bulan – Unggah hingga 1.000 gambar setiap hari.
+    - **Paket MetaPro Premium:** $40 untuk unggahan gambar tak terbatas seumur hidup.
 
-    Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.
+    Siap untuk merevolusi alur kerja Anda? Berlangganan hari ini dan ambil langkah pertama menuju solusi manajemen gambar yang lebih cerdas dan efisien.
     """)
