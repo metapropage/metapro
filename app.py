@@ -71,7 +71,6 @@ if st.session_state.authenticated:
     menu()  # Render the dynamic menu
 
     # Logout button in the sidebar
-    st.sidebar.title("Options")
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         set_lock("")
