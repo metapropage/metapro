@@ -1,8 +1,6 @@
 import streamlit as st
 from menu import menu
 
-st.set_option("client.showSidebarNavigation", False)
-
 # Predefined username and password (for demonstration purposes)
 USERNAME = "admin"
 PASSWORD = "dian"
@@ -31,6 +29,8 @@ if not st.session_state.authenticated:
 
 # If authenticated, show the role selection and menu
 if st.session_state.authenticated:
+    st.title("Welcome!")
+    
     # Retrieve the role from Session State to initialize the widget
     st.session_state._role = st.session_state.role
 
@@ -45,4 +45,5 @@ if st.session_state.authenticated:
         key="_role",
         on_change=set_role,
     )
+    
     menu()  # Render the dynamic menu
