@@ -19,6 +19,10 @@ from googleapiclient.http import MediaFileUpload
 import paramiko
 from menu import menu_with_redirect
 
+st.set_option("client.showSidebarNavigation", False)
+
+# Redirect to app.py if not logged in, otherwise show the navigation menu
+menu_with_redirect()
 
 # Set the timezone to UTC+7 Jakarta
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
