@@ -51,22 +51,34 @@ if not st.session_state.authenticated:
         if st.button("Login"):
             authenticate(username, password)
 
-# If authenticated, show the role selection and menu
+# If authenticated, show the information and menu
 if st.session_state.authenticated:
     # Retrieve the role from Session State to initialize the widget
     st.session_state._role = st.session_state.role
 
-    def set_role():
-        # Callback function to save the role selection to Session State
-        st.session_state.role = st.session_state._role
+    st.markdown("""
+    ## Why Choose MetaPro?
 
-    # Selectbox to choose role
-    st.selectbox(
-        "Select your role:",
-        ["super-admin"],
-        key="_role",
-        on_change=set_role,
-    )
+    **AI-Powered Precision:** Leverage the power of Google Generative AI to automatically generate highly relevant and descriptive titles and tags for your images. Enhance your image metadata with unprecedented accuracy and relevance.
+
+    **Streamlined Workflow:** Upload your images in just a few clicks. Our app processes each photo, embeds the generated metadata, and prepares it for upload—automatically and effortlessly.
+
+    **Secure and Efficient Gdrive Upload:** Once processed, your images are securely uploaded to Gdrive. Keep your workflow smooth and your data safe with our robust upload system.
+
+    ### How It Works:
+
+    1. **Upload Your Images:** Drag and drop your JPG/JPEG files into the uploader.
+    2. **Generate Metadata:** Watch as the app uses AI to create descriptive titles and relevant tags.
+    3. **Embed Metadata:** The app embeds the metadata directly into your images.
+    4. **Directly upload to Google Drive** for faster downloads.
+
+    ### Subscribe Now and Experience the Difference:
+
+    **MetaPro Basic Plan:** $10 for 3 months – Upload up to 1,000 images daily.
+    **MetaPro Premium Plan:** $40 for unlimited image uploads for a lifetime.
+
+    Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.
+    """)
 
     menu()  # Render the dynamic menu
 
