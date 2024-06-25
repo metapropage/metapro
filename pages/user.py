@@ -160,14 +160,6 @@ def format_midjourney_prompt(description):
 
 def main():
     """Main function for the Streamlit app."""
-    
-    # Apply custom styling
-    st.markdown("""
-    <style>
-        #MainMenu, header, footer {visibility: hidden;}
-        section[data-testid="stSidebar"] div:first-child {top: 0; height: 100vh;}
-    </style>
-    """, unsafe_allow_html=True)
 
     # Check if user is logged in
     if not st.session_state['logged_in']:
