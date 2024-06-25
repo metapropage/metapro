@@ -51,26 +51,7 @@ def set_lock(status):
     with open(lock_file, 'w') as file:
         file.write(status)
 
-# Function to display authenticated menu
-def authenticated_menu():
-    st.sidebar.button("Home", on_click=lambda: st.experimental_rerun())
-    st.sidebar.button("Upload via Gdrive", on_click=lambda: st.experimental_rerun())
-    if st.session_state.role == "super-admin":
-        st.sidebar.button("Upload via SFTP", on_click=lambda: st.experimental_rerun())
-        st.sidebar.button("Describe Midjourney Prompts", on_click=lambda: st.experimental_rerun(), disabled=st.session_state.role != "Prompts")
-
-# Function to display unauthenticated menu
-def unauthenticated_menu():
-    st.sidebar.button("Log in", on_click=lambda: st.experimental_rerun())
-
-# Main menu function
-def menu():
-    if st.session_state.authenticated:
-        authenticated_menu()
-    else:
-        unauthenticated_menu()
-
-# Main app logic
+# If the user is not authenticated, show the login form
 if not st.session_state.authenticated:
     st.title("Login")
     if check_lock():
@@ -83,10 +64,15 @@ if not st.session_state.authenticated:
 
 # If authenticated, show the role selection and menu
 if st.session_state.authenticated:
+    # Hide login form
+    st.session_state.authenticated = True
+    st.session_state._role = st.session_state.role
+
     def set_role():
         # Callback function to save the role selection to Session State
         st.session_state.role = st.session_state._role
 
+    # Selectbox to choose role
     st.selectbox(
         "Select your role:",
         ["super-admin"],
