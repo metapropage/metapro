@@ -10,7 +10,7 @@ st.markdown("""
         #MainMenu, header, footer {
             visibility: hidden;
         }
-        section[data-testid="stSidebar"] div:first-child {
+        section[data-testid="stSidebar"] {
             top: 0;
             height: 10vh;
         }
@@ -20,12 +20,6 @@ st.markdown("""
 # Add elements to the sidebar
 st.sidebar.title("Sidebar Title")
 st.sidebar.write("Sidebar content goes here")
-
-# Add main content
-st.title("Main Content Title")
-st.write("Main content goes here")
-
-st.set_option("client.showSidebarNavigation", False)
 
 # Predefined username and password (for demonstration purposes)
 USERNAME = "admin"
