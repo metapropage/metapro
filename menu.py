@@ -1,4 +1,5 @@
 import streamlit as st
+from menu import menu
 
 def authenticated_menu():
     # Show a navigation menu for authenticated users
