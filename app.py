@@ -47,11 +47,16 @@ if st.session_state.authenticated:
     )
     
     menu()  # Render the dynamic menu
-    
+
     # Apply custom styling
     st.markdown("""
     <style>
-        #MainMenu, header, footer {visibility: hidden;}
-        section[data-testid="stSidebar"] div:first-child {top: 0; height: 100vh;}
+        #MainMenu {visibility: hidden;}
+        header {visibility: hidden;}
+        footer {visibility: hidden;}
+        section[data-testid="stSidebar"] > div:first-child {
+            top: 0;
+            height: 100vh;
+        }
     </style>
     """, unsafe_allow_html=True)
