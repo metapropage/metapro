@@ -32,6 +32,7 @@ if "role" not in st.session_state:
 def authenticate(username, password):
     if username == USERNAME and password == PASSWORD:
         st.session_state.authenticated = True
+        st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
         set_lock("logged_in")
     else:
         st.error("Incorrect username or password")
@@ -62,29 +63,17 @@ if not st.session_state.authenticated:
         if st.button("Login"):
             authenticate(username, password)
 
-# If authenticated, show the role selection and menu
+# If authenticated, show the menu and additional information
 if st.session_state.authenticated:
     # Hide login form
     st.session_state.authenticated = True
-    st.session_state._role = st.session_state.role
-
-    def set_role():
-        # Callback function to save the role selection to Session State
-        st.session_state.role = st.session_state._role
-
-    # Selectbox to choose role
-    st.selectbox(
-        "Select your role:",
-        ["super-admin"],
-        key="_role",
-        on_change=set_role,
-    )
 
     menu()  # Render the dynamic menu
 
     # Logout button in the sidebar
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
+        st.session_state.role = None
         set_lock("")
         st.success("Logged out successfully.")
 
