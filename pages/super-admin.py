@@ -46,11 +46,11 @@ def normalize_text(text):
     return normalized
 
 # Function to generate detailed descriptions for files using AI model
-def generate_description(model, file):
-    if file.type in ['image/jpeg', 'image/png', 'image/svg+xml', 'image/eps']:
-        description = model.generate_content([f"Generate a very detailed description for the following file: {file.name}"])
-        return description.text.strip()
-    return None
+def generate_description(model, file_path):
+    with open(file_path, "rb") as img_file:
+        img_bytes = img_file.read()
+    description = model.generate_content(["Generate a very detailed description for this image:", img_bytes])
+    return description.text.strip()
 
 def main():
     """Main function for the Streamlit app."""
@@ -151,11 +151,10 @@ def main():
                             for i, file_path in enumerate(file_paths):
                                 process_placeholder.text(f"Generating description for file {i + 1}/{len(file_paths)}")
                                 try:
-                                    file = valid_files[i]
-                                    description = generate_description(model, file)
-                                    descriptions.append((file.name, description))
+                                    description = generate_description(model, file_path)
+                                    descriptions.append((os.path.basename(file_path), description))
                                 except Exception as e:
-                                    st.error(f"An error occurred while generating description for {file.name}: {e}")
+                                    st.error(f"An error occurred while generating description for {os.path.basename(file_path)}: {e}")
                                     st.error(traceback.format_exc())
                                     continue
 
