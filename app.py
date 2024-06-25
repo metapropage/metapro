@@ -79,7 +79,13 @@ if st.session_state.authenticated:
 
     Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.
     """)
-
+# Selectbox to choose role
+st.selectbox(
+    "Select your role:",
+    [None, "user", "admin", "super-admin"],
+    key="_role",
+    on_change=set_role,
+)
     menu()  # Render the dynamic menu
 
     # Logout button in the sidebar
