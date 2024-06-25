@@ -12,10 +12,18 @@ st.markdown("""
         }
         section[data-testid="stSidebar"] div:first-child {
             top: 0;
-            height: 100vh;
+            height: 10vh;
         }
     </style>
     """, unsafe_allow_html=True)
+
+# Add elements to the sidebar
+st.sidebar.title("Sidebar Title")
+st.sidebar.write("Sidebar content goes here")
+
+# Add main content
+st.title("Main Content Title")
+st.write("Main content goes here")
 
 st.set_option("client.showSidebarNavigation", False)
 
