@@ -41,7 +41,7 @@ if st.session_state.authenticated:
     # Selectbox to choose role
     st.selectbox(
         "Select your role:",
-        [None, "user", "admin", "super-admin"],
+        ["super-admin"],
         key="_role",
         on_change=set_role,
     )
