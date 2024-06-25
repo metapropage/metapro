@@ -4,6 +4,19 @@ import os
 # Assuming the menu function is defined in a module named 'menu'
 from menu import menu
 
+# Apply custom styling
+st.markdown("""
+    <style>
+        #MainMenu, header, footer {
+            visibility: hidden;
+        }
+        section[data-testid="stSidebar"] div:first-child {
+            top: 0;
+            height: 10vh;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 st.set_option("client.showSidebarNavigation", False)
 
 # Predefined username and password (for demonstration purposes)
@@ -75,14 +88,6 @@ if st.session_state.authenticated:
         st.session_state.authenticated = False
         set_lock("")
         st.success("Logged out successfully.")
-
-    # Selectbox to choose role
-    st.selectbox(
-        "Select your role:",
-        ["super-admin"],
-        key="_role",
-        on_change=set_role,
-    ) 
 
     # Additional Information
     st.markdown("### Why Choose MetaPro?")
