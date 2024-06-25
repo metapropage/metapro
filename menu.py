@@ -1,20 +1,21 @@
 import streamlit as st
-from pages import admin, super_admin, user
 
 def display_menu():
     st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox("Choose a page", ["Admin", "Super Admin", "User"])
 
-    if page == "Admin":
-        admin.display()
-    elif page == "Super Admin":
-        super_admin.display()
-    elif page == "User":
-        user.display()
+    # Link to Home (app.py)
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Main Pages")
+    st.sidebar.page_config("app.py", label="Home")
+    st.sidebar.page_config("pages/about.py", label="About")
 
-def main():
-    st.title("Main App")
-    display_menu()
-
-if __name__ == "__main__":
-    main()
+    # Links to User Pages
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("User Pages")
+    st.sidebar.page_config("pages/user.py", label="Upload via Gdrive")
+    
+    # Links to Admin Pages
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Admin Pages")
+    st.sidebar.page_config("pages/admin.py", label="Admin Page")
+    st.sidebar.page_config("pages/super-admin.py", label="Super Admin Page")
