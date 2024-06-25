@@ -1,46 +1,13 @@
 import streamlit as st
-from menu import menu
+from menu import authenticated_menu
 
-# Hide the sidebar navigation
-st.set_option("client.showSidebarNavigation", False)
-
-# Initialize session state variables
-if "role" not in st.session_state:
-    st.session_state.role = None
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
-def login():
-    """Login function to authenticate user."""
-    username = st.session_state.username
-    password = st.session_state.password
-    
-    # Replace the following lines with your authentication logic
-    if username == "admin" and password == "password":  # Simple authentication logic for demo purposes
-        st.session_state.logged_in = True
+def menu_with_redirect():
+    # Redirect users to the main page if not logged in, otherwise continue to
+    # render the navigation menu
+    if "role" not in st.session_state or st.session_state.role is None:
+        st.experimental_rerun("app.py")
     else:
-        st.error("Invalid username or password")
+        authenticated_menu()
 
-# Login form
-if not st.session_state.logged_in:
-    st.text_input("Username", key="username")
-    st.text_input("Password", type="password", key="password")
-    st.button("Login", on_click=login)
-else:
-    # Retrieve the role from Session State to initialize the widget
-    st.session_state._role = st.session_state.role
-
-    def set_role():
-        # Callback function to save the role selection to Session State
-        st.session_state.role = st.session_state._role
-
-    # Selectbox to choose role
-    st.selectbox(
-        "Select your role:",
-        ["super-admin"],
-        key="_role",
-        on_change=set_role,
-    )
-    
-    # Render the dynamic menu
-    menu()
+if __name__ == "__main__":
+    menu_with_redirect()
