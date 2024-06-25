@@ -28,12 +28,16 @@ if "authenticated" not in st.session_state:
 if "role" not in st.session_state:
     st.session_state.role = None
 
+if "rerun" not in st.session_state:
+    st.session_state.rerun = False
+
 # Authentication function
 def authenticate(username, password):
     if username == USERNAME and password == PASSWORD:
         st.session_state.authenticated = True
         st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
         set_lock("logged_in")
+        st.session_state.rerun = True
     else:
         st.error("Incorrect username or password")
 
@@ -65,8 +69,9 @@ if not st.session_state.authenticated:
 
 # If authenticated, show the menu and additional information
 if st.session_state.authenticated:
-    # Hide login form
-    st.session_state.authenticated = True
+    if st.session_state.rerun:
+        st.session_state.rerun = False
+        st.experimental_rerun()
 
     menu()  # Render the dynamic menu
 
