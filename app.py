@@ -17,10 +17,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Add elements to the sidebar
-st.sidebar.title("Sidebar Title")
-st.sidebar.write("Sidebar content goes here")
-
 # Predefined username and password (for demonstration purposes)
 USERNAME = "admin"
 PASSWORD = "dian"
