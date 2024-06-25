@@ -5,27 +5,9 @@ def authenticated_menu():
     # Show a navigation menu for authenticated users
     st.sidebar.page_link("app.py", label="Home")
     st.sidebar.page_link("pages/Gdrive.py", label="Upload via Gdrive")
-    if st.session_state.role in ["admin", "super-admin"]:
-        st.sidebar.page_link("pages/admin.py", label="Upload via SFTP")
-        st.sidebar.page_link(
-            "pages/Prompts.py",
-            label="Describe Midjourney Prompts",
-            disabled=st.session_state.role != "super-admin",
+    st.sidebar.page_link("pages/admin.py", label="Upload via SFTP")
+    st.sidebar.page_link("pages/Prompts.py", label="Upload via SFTP")
         )
-
-
-def unauthenticated_menu():
-    # Show a navigation menu for unauthenticated users
-    st.sidebar.page_link("app.py", label="Log in")
-
-
-def menu():
-    # Determine if a user is logged in or not, then show the correct
-    # navigation menu
-    if "role" not in st.session_state or st.session_state.role is None:
-        unauthenticated_menu()
-        return
-    authenticated_menu()
 
 
 def menu_with_redirect():
