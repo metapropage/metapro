@@ -154,10 +154,10 @@ def main():
     """Main function for the Streamlit app."""
 
         # Apply custom styling
-    st.markdown("""
-    <style>
-        #MainMenu, header, footer {visibility: hidden;}
-    </style>
+<style>
+  # MainMenu {visibility: hidden;}
+  footer {visibility: hidden;}
+</style>
     """, unsafe_allow_html=True)
 
     # Check if user is logged in
