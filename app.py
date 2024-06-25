@@ -13,7 +13,9 @@ def authenticate(username, password):
         st.error("Incorrect username or password")
 
 def main():
-        # Apply custom styling
+    """Main function for the Streamlit app."""
+    
+    # Apply custom styling
     st.markdown("""
     <style>
         #MainMenu, header, footer {visibility: hidden;}
