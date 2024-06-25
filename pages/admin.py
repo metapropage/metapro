@@ -151,12 +151,6 @@ def main():
     if 'tags_prompt' not in st.session_state:
         st.session_state['tags_prompt'] = ("Generate up to 49 keywords relevant to the image (each keyword must be one word, separated by commas). Avoid using brand names or copyrighted elements in the keywords.")
 
-    # Display "About" button at the top
-    if st.button("About"):
-        st.markdown("""
-        ### Why Choose MetaPro?
-        """)
-
     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
