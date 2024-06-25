@@ -124,6 +124,10 @@ def sftp_upload(image_path, sftp_username, sftp_password, progress_placeholder, 
 
 def main():
     """Main function for the Streamlit app."""
+
+    # Add elements to the sidebar
+    st.sidebar.title("Sidebar Title")
+    st.sidebar.write("Sidebar content goes here")
     
     # Initialize session state for license validation
     if 'license_validated' not in st.session_state:
