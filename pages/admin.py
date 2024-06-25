@@ -133,7 +133,7 @@ def main():
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.role = None
-        set_lock("")
+        # set_lock("")  # Commenting out the set_lock function call
         st.success("Logged out successfully.")
         st.experimental_rerun()
 
