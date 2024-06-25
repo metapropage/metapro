@@ -160,17 +160,6 @@ def main():
     st.sidebar.title("Sidebar Title")
     st.sidebar.write("Sidebar content goes here")
 
-    # Logout button
-    if st.sidebar.button("Logout"):
-        st.session_state.clear()
-        st.session_state['logout_success'] = True
-        st.experimental_rerun()
-
-    # Redirect to app.py if logged out
-    if st.session_state.get('logout_success'):
-        st.success("Successfully logged out.")
-        st.stop()  # Stop execution to prevent further rendering
-
     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
