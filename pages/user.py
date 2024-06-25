@@ -163,7 +163,7 @@ def main():
 st.sidebar.title("Sidebar Title")
 st.sidebar.write("Sidebar content goes here")
 
-    # Display WhatsApp chat link
+     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
         <a href="https://wa.me/6285328007533" target="_blank">
