@@ -1,5 +1,4 @@
 import streamlit as st
-from menu import menu_with_redirect
 import os
 import tempfile
 from PIL import Image
@@ -13,12 +12,9 @@ import unicodedata
 from datetime import datetime, timedelta
 import pytz
 import json
-import unicodedata
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-import paramiko
-
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -59,42 +55,30 @@ if 'upload_count' not in st.session_state:
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
-if 'sftp_username' not in st.session_state:
-    st.session_state['sftp_username'] = "209940897"
-
-if 'title_prompt' not in st.session_state:
-    st.session_state['title_prompt'] = ("Create a descriptive title in English up to 12 words long. Ensure the keywords accurately reflect the subject matter, context, and main elements of the image, using precise terms that capture unique aspects like location, activity, or theme for specificity. Maintain variety and consistency in keywords relevant to the image content. Avoid using brand names or copyrighted elements in the title.")
-
-if 'tags_prompt' not in st.session_state:
-    st.session_state['tags_prompt'] = ("Generate up to 49 keywords relevant to the image (each keyword must be one word, separated by commas). Avoid using brand names or copyrighted elements in the keywords.")
+# Function to normalize and clean text
+def normalize_text(text):
+    normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+    return normalized
 
 # Function to generate metadata for images using AI model
 def generate_metadata(model, img):
-    title_prompt = st.session_state['title_prompt']
-    tags_prompt = st.session_state['tags_prompt']
+    caption = model.generate_content(["Generate a descriptive title in English up to 12 words long, identifying the main elements of the image. Describe the primary subjects, objects, activities, and context. Refine the title to include relevant keywords for SEO and ensure it is engaging and informative, but avoid mentioning human names, brand names, product names, or company names.", img])
+    tags = model.generate_content(["Generate up to 45 keywords in English that are relevant to the image (each keyword must be one word, separated by commas). Ensure each keyword is a single word, separated by commas.", img])
 
-    caption = model.generate_content([title_prompt, img])
-    tags = model.generate_content([tags_prompt, img])
-
-    # Extracting keywords and ensuring they are single words
-    keywords = re.findall(r'\w+', tags.text)
+    # Filter out undesirable characters from the generated tags
+    filtered_tags = re.sub(r'[^\w\s,]', '', tags.text)
     
-    # Converting keywords to lowercase
-    keywords = [word.lower() for word in keywords]
+    # Trim the generated keywords if they exceed 49 words
+    keywords = filtered_tags.split(',')[:49]  # Limit to 49 words
+    trimmed_tags = ','.join(keywords)
     
-    # Limiting keywords to 49 words and removing duplicates
-    unique_keywords = list(set(keywords))[:49]
-
-    # Joining keywords with commas
-    trimmed_tags = ','.join(unique_keywords)
-
     return {
-        'Title': caption.text.strip(),  # Strip leading/trailing whitespace from caption
-        'Tags': tags.text
+        'Title': caption.text.strip(),  # Remove leading/trailing whitespace
+        'Tags': trimmed_tags.strip()
     }
 
 # Function to embed metadata into images
-def embed_metadata(image_path, metadata, progress_placeholder, files_processed, total_files):
+def embed_metadata(image_path, metadata, progress_bar, files_processed, total_files):
     try:
         # Simulate delay
         time.sleep(1)
@@ -116,9 +100,10 @@ def embed_metadata(image_path, metadata, progress_placeholder, files_processed, 
         # Save the image with the embedded metadata
         iptc_data.save()
 
-        # Update progress text
+        # Update progress bar
         files_processed += 1
-        progress_placeholder.text(f"Processing images to generate titles, tags, and embed metadata {files_processed}/{total_files}")
+        progress_bar.progress(files_processed / total_files)
+        progress_bar.text(f"Embedding metadata for image {files_processed}/{total_files}")
 
         # Return the updated image path for further processing
         return image_path
@@ -127,52 +112,73 @@ def embed_metadata(image_path, metadata, progress_placeholder, files_processed, 
         st.error(f"An error occurred while embedding metadata: {e}")
         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
 
-def sftp_upload(image_path, sftp_username, sftp_password, progress_placeholder, files_processed, total_files):
-    # SFTP connection details
-    sftp_host = "sftp.contributor.adobestock.com"
-    sftp_port = 22
-
-    # Initialize SFTP connection
-    transport = paramiko.Transport((sftp_host, sftp_port))
-    transport.connect(username=sftp_username, password=sftp_password)
-    sftp = paramiko.SFTPClient.from_transport(transport)
-
+def zip_processed_images(image_paths):
     try:
-        filename = os.path.basename(image_path)
-        sftp.put(image_path, f"/your/remote/directory/path/{filename}")  # Replace with your remote directory path
-        progress_placeholder.text(f"Uploaded {files_processed + 1}/{total_files} files to SFTP server.")
+        zip_file_path = os.path.join(tempfile.gettempdir(), 'processed_images.zip')
+
+        with zipfile.ZipFile(zip_file_path, 'w') as zipf:
+            for image_path in image_paths:
+                zipf.write(image_path, arcname=os.path.basename(image_path))
+
+        return zip_file_path
 
     except Exception as e:
-        st.error(f"Error during SFTP upload: {e}")
+        st.error(f"An error occurred while zipping images: {e}")
         st.error(traceback.format_exc())
+        return None
 
-    finally:
-        sftp.close()
-        transport.close()
+def upload_to_drive(zip_file_path, credentials):
+    try:
+        service = build('drive', 'v3', credentials=credentials)
+        file_metadata = {
+            'name': os.path.basename(zip_file_path),
+            'mimeType': 'application/zip'
+        }
+        media = MediaFileUpload(zip_file_path, mimetype='application/zip', resumable=True)
+        file = service.files().create(body=file_metadata, media_body=media, fields='id,webViewLink').execute()
+
+        # Make the file publicly accessible
+        service.permissions().create(
+            fileId=file['id'],
+            body={'type': 'anyone', 'role': 'reader'}
+        ).execute()
+
+        return file.get('webViewLink')
+    except Exception as e:
+        st.error(f"An error occurred while uploading to Google Drive: {e}")
+        st.error(traceback.format_exc())
+        return None
+
+def generate_description(model, img):
+    description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
+    return description.text.strip()
+
+def format_midjourney_prompt(description):
+    prompt_text = f"{description} -ar 16:9"
+    return prompt_text
 
 def main():
     """Main function for the Streamlit app."""
     
+    # Apply custom styling
+    st.markdown("""
+    <style>
+        #MainMenu, header, footer {visibility: hidden;}
+        section[data-testid="stSidebar"] div:first-child {top: 0; height: 100vh;}
+    </style>
+    """, unsafe_allow_html=True)
+
     # Check if user is logged in
     if not st.session_state['logged_in']:
         # Display login form
-        # Use custom HTML and CSS to style the title
-        st.markdown("""
-    <style>
-    .small-title {
-        font-size: 1.5em; /* Adjust the size as needed */
-    }
-    </style>
-    <h1 class="small-title">Login</h1>
-    """, unsafe_allow_html=True)
-
+        st.title("Gdrive")
         username = st.text_input("Username")
         password = st.text_input("Password", type='password')
 
         if st.button("Login"):
             # Validate login credentials
-            correct_username = "dian"
-            correct_password = "trial"
+            correct_username = "user"
+            correct_password = "dian"
 
             if username == correct_username and password == correct_password:
                 if check_lock():
@@ -185,13 +191,7 @@ def main():
                 st.error("Invalid username or password.")
         return
 
-    # Display "About" button at the top
-    if st.button("About"):
-        st.markdown("""
-        ### Why Choose MetaPro?
-        """)
-
-    # Check logout at the end
+    # Display logout button
     if st.button("Logout"):
         st.session_state['logged_in'] = False
         set_lock("")
@@ -227,7 +227,7 @@ def main():
             validation_key = st.text_input('License Key', type='password')
 
     # Check if validation key is correct
-    correct_key = "31days"
+    correct_key = "dian12345"
 
     if not st.session_state['license_validated'] and validation_key:
         if validation_key == correct_key:
@@ -239,7 +239,7 @@ def main():
             st.error("Invalid validation key. Please enter the correct key.")
 
     if st.session_state['license_validated']:
-        # Read start date from license file
+        # Check the license file for the start date
         with open(license_file, 'r') as file:
             start_date_str = file.read().strip()
             start_date = datetime.fromisoformat(start_date_str)
@@ -262,24 +262,6 @@ def main():
         if api_key:
             st.session_state['api_key'] = api_key
 
-        # SFTP Username input
-        sftp_username = st.text_input('SFTP Username', value=st.session_state['sftp_username'])
-
-        # Save SFTP username in session state
-        if sftp_username:
-            st.session_state['sftp_username'] = sftp_username
-
-        # SFTP Password input
-        sftp_password = st.text_input('SFTP Password', type='password')
-
-        # Commented out the Title and tags prompts input
-        # title_prompt = st.text_area('Title Prompt', value=st.session_state['title_prompt'], height=100)
-        # tags_prompt = st.text_area('Tags Prompt', value=st.session_state['tags_prompt'], height=100)
-
-        # Save prompts in session state
-        # st.session_state['title_prompt'] = title_prompt
-        # st.session_state['tags_prompt'] = tags_prompt
-
         # Upload image files
         uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
 
@@ -299,7 +281,7 @@ def main():
                                 'date': current_date.date(),
                                 'count': 0
                             }
-
+                        
                         # Check if remaining uploads are available
                         if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
                             remaining_uploads = 1000 - st.session_state['upload_count']['count']
@@ -322,41 +304,95 @@ def main():
                                     f.write(file.read())
                                 image_paths.append(temp_image_path)
 
-                            total_files = len(image_paths)
-                            files_processed = 0
-
-                            # Progress placeholder for embedding metadata
-                            embed_progress_placeholder = st.empty()
-                            # Progress placeholder for SFTP upload
-                            upload_progress_placeholder = st.empty()
-
-                            # Process each image one by one
-                            for image_path in image_paths:
+                            # Process each image and generate titles and tags using AI
+                            metadata_list = []
+                            process_placeholder = st.empty()
+                            for i, image_path in enumerate(image_paths):
+                                process_placeholder.text(f"Processing Generate Titles and Tags {i + 1}/{len(image_paths)}")
                                 try:
-                                    # Open image
                                     img = Image.open(image_path)
-
-                                    # Generate metadata
                                     metadata = generate_metadata(model, img)
-
-                                    # Embed metadata
-                                    updated_image_path = embed_metadata(image_path, metadata, embed_progress_placeholder, files_processed, total_files)
-                                    
-                                    # Upload via SFTP
-                                    if updated_image_path:
-                                        sftp_upload(updated_image_path, sftp_username, sftp_password, upload_progress_placeholder, files_processed, total_files)
-                                        files_processed += 1
-
+                                    metadata_list.append(metadata)
                                 except Exception as e:
-                                    st.error(f"An error occurred while processing {os.path.basename(image_path)}: {e}")
+                                    st.error(f"An error occurred while generating metadata for {os.path.basename(image_path)}: {e}")
                                     st.error(traceback.format_exc())
                                     continue
 
-                            st.success(f"Successfully processed and transferred {files_processed} files to the SFTP server.")
+                            # Embed metadata into images
+                            total_files = len(image_paths)
+                            files_processed = 0
+
+                            # Display the progress bar and current file number
+                            progress_placeholder = st.empty()
+                            progress_bar = progress_placeholder.progress(0)
+                            progress_placeholder.text(f"Processing images 0/{total_files}")
+
+                            processed_image_paths = []
+                            for i, (image_path, metadata) in enumerate(zip(image_paths, metadata_list)):
+                                process_placeholder.text(f"Embedding metadata for image {i + 1}/{len(image_paths)}")
+                                updated_image_path = embed_metadata(image_path, metadata, progress_bar, files_processed, total_files)
+                                if updated_image_path:
+                                    processed_image_paths.append(updated_image_path)
+                                    files_processed += 1
+                                    # Update progress bar and current file number
+                                    progress_bar.progress(files_processed / total_files)
+
+                            # Zip processed images
+                            zip_file_path = zip_processed_images(processed_image_paths)
+
+                            if zip_file_path:
+                                st.success(f"Successfully zipped processed {zip_file_path}")
+
+                                # Upload zip file to Google Drive and get the shareable link
+                                credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=['https://www.googleapis.com/auth/drive.file'])
+                                drive_link = upload_to_drive(zip_file_path, credentials)
+
+                                if drive_link:
+                                    st.success("File uploaded to Google Drive successfully!")
+                                    st.markdown(f"[Download processed images from Google Drive]({drive_link})")
+
+                            # Generate and display MidJourney prompt texts and thumbnails
+                            st.markdown("## Generated MidJourney Prompts")
+                            for image_path in processed_image_paths:
+                                img = Image.open(image_path)
+                                description = generate_description(model, img)
+                                midjourney_prompt = format_midjourney_prompt(description)
+
+                                # Display thumbnail
+                                img.thumbnail((150, 150))
+                                st.image(img)
+
+                                # Display prompt text
+                                st.markdown(f"**MidJourney Prompt:** {midjourney_prompt}")
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+
+    # Display "About" button
+    if st.button("About"):
+        st.markdown("""
+        ### Why Choose MetaPro?
+
+        **AI-Powered Precision:** Leverage the power of Google Generative AI to automatically generate highly relevant and descriptive titles and tags for your images. Enhance your image metadata with unprecedented accuracy and relevance.
+
+        **Streamlined Workflow:** Upload your images in just a few clicks. Our app processes each photo, embeds the generated metadata, and prepares it for upload—automatically and effortlessly.
+
+        **Secure and Efficient Gdrive Upload:** Once processed, your images are securely uploaded to gdrive. Keep your workflow smooth and your data safe with our robust upload system.
+
+        *How It Works:*
+        1. Upload Your Images: Drag and drop your JPG/JPEG files into the uploader.
+        2. Generate Metadata: Watch as the app uses AI to create descriptive titles and relevant tags.
+        3. Embed Metadata: The app embeds the metadata directly into your images.
+        4. Directly upload to Google Drive for faster downloads.
+        
+        **Subscribe Now and Experience the Difference:**
+        - **MetaPro Basic Plan: $10 for 3 months – Upload up to 1,000 images daily.
+        - **MetaPro Premium Plan: $40 for unlimited image uploads for a lifetime.
+
+        Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.
+
+        """)
 
 if __name__ == '__main__':
     main()
