@@ -1,17 +1,15 @@
 import streamlit as st
-from pages import admin, super_admin, user
 
-def main():
+def display_menu():
     st.sidebar.title("Navigation")
-    menu = ["User", "Admin", "Super Admin"]
-    choice = st.sidebar.selectbox("Go to", menu)
+    page = st.sidebar.selectbox("Choose a page", ["Admin", "Super Admin", "User"])
 
-    if choice == "User":
-        user.app()
-    elif choice == "Admin":
-        admin.app()
-    elif choice == "Super Admin":
-        super_admin.app()
-
-if __name__ == '__main__':
-    main()
+    if page == "Admin":
+        import pages.admin as admin
+        admin.display()
+    elif page == "Super Admin":
+        import pages.super_admin as super_admin
+        super_admin.display()
+    elif page == "User":
+        import pages.user as user
+        user.display()
