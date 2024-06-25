@@ -1,6 +1,5 @@
 import streamlit as st
 import os
-from datetime import datetime, timedelta
 
 # Assuming the menu function is defined in a module named 'menu'
 from menu import menu
@@ -13,7 +12,7 @@ st.markdown("""
         }
         section[data-testid="stSidebar"] {
             top: 0;
-            height: 100vh;
+            height: 10vh;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -37,40 +36,31 @@ def authenticate(username, password):
     if username == USERNAME and password == PASSWORD:
         st.session_state.authenticated = True
         st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
-        set_lock(username)
+        set_lock("logged_in")
         st.session_state.rerun = True
     else:
         st.error("Incorrect username or password")
 
 # Function to check the lock file
-def check_lock(username):
+def check_lock():
     lock_file = "lock.txt"
     if os.path.exists(lock_file):
         with open(lock_file, 'r') as file:
-            lines = file.readlines()
-            for line in lines:
-                user, timestamp = line.strip().split(',')
-                timestamp = datetime.strptime(timestamp, '%Y-%m-%d %H:%M:%S')
-                if user == username and datetime.now() - timestamp <= timedelta(days=30):
-                    return True
-            # Remove entries older than 30 days
-            lines = [line for line in lines if datetime.now() - datetime.strptime(line.strip().split(',')[1], '%Y-%m-%d %H:%M:%S') <= timedelta(days=30)]
-            with open(lock_file, 'w') as file:
-                file.writelines(lines)
+            status = file.read()
+        return status == "logged_in"
     return False
 
 # Function to set lock file
-def set_lock(username):
+def set_lock(status):
     lock_file = "lock.txt"
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    with open(lock_file, 'a') as file:
-        file.write(f"{username},{timestamp}\n")
+    with open(lock_file, 'w') as file:
+        file.write(status)
 
 # If the user is not authenticated, show the login form
 if not st.session_state.authenticated:
     st.title("Login")
-    if check_lock(USERNAME):
-        st.error("You have been locked out due to a previous login. Please try again later.")
+    if check_lock():
+        st.error("Another user is currently logged in. Please try again later.")
     else:
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -89,13 +79,7 @@ if st.session_state.authenticated:
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.role = None
-        # Remove the user's lock
-        with open("lock.txt", 'r') as file:
-            lines = file.readlines()
-        with open("lock.txt", 'w') as file:
-            for line in lines:
-                if not line.startswith(USERNAME):
-                    file.write(line)
+        set_lock("")
         st.success("Logged out successfully.")
 
     # Additional Information
