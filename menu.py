@@ -4,12 +4,12 @@ import streamlit as st
 def authenticated_menu():
     # Show a navigation menu for authenticated users
     st.sidebar.page_link("app.py", label="Home")
-    st.sidebar.page_link("pages/user.py", label="Your profile")
+    st.sidebar.page_link("pages/user.py", label="Upload via Gdrive")
     if st.session_state.role in ["admin", "super-admin"]:
-        st.sidebar.page_link("pages/admin.py", label="Manage users")
+        st.sidebar.page_link("pages/admin.py", label="Upload via SFTP")
         st.sidebar.page_link(
             "pages/super-admin.py",
-            label="Manage admin access",
+            label="Describe Midjourney Prompts",
             disabled=st.session_state.role != "super-admin",
         )
 
