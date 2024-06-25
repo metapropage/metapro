@@ -153,6 +153,13 @@ def format_midjourney_prompt(description):
     prompt_text = f"{description} -ar 16:9"
     return prompt_text
 
+# Function to set lock status
+def set_lock(status):
+    lock_file = "lock.txt"
+    with open(lock_file, 'w') as file:
+        file.write(status)
+
+# Main function for the Streamlit app
 def main():
     """Main function for the Streamlit app."""
 
@@ -170,6 +177,13 @@ def main():
         </a>
     </div>
     """, unsafe_allow_html=True)
+
+    # Add a logout button to the sidebar
+    if st.sidebar.button("Logout"):
+        st.session_state.authenticated = False
+        set_lock("")
+        st.success("Logged out successfully.")
+        st.experimental_rerun()
 
     # Check if license has already been validated
     license_file = "license.txt"
