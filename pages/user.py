@@ -1,4 +1,3 @@
-
 import streamlit as st
 import os
 import tempfile
@@ -12,9 +11,7 @@ import re
 import unicodedata
 from datetime import datetime, timedelta
 import pytz
-import base64
 import json
-import google.auth
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -22,15 +19,36 @@ from googleapiclient.http import MediaFileUpload
 # Set the timezone to UTC+7 Jakarta
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
 
-# Initialize session state for license validation and upload count
+# Function to check if lock file exists and its content
+def check_lock():
+    lock_file = "lock.txt"
+    if os.path.exists(lock_file):
+        with open(lock_file, 'r') as file:
+            content = file.read().strip()
+            return content == "logged_in"
+    return False
+
+# Function to set lock file
+def set_lock(status):
+    lock_file = "lock.txt"
+    with open(lock_file, 'w') as file:
+        file.write(status)
+
+# Initialize session state for login and license validation
+if 'logged_in' not in st.session_state:
+    st.session_state['logged_in'] = False
+
 if 'license_validated' not in st.session_state:
     st.session_state['license_validated'] = False
 
 if 'upload_count' not in st.session_state:
     st.session_state['upload_count'] = {
-        'date': datetime.now(JAKARTA_TZ).date(),
+        'date': None,
         'count': 0
     }
+
+if 'api_key' not in st.session_state:
+    st.session_state['api_key'] = None
 
 # Function to normalize and clean text
 def normalize_text(text):
@@ -39,13 +57,8 @@ def normalize_text(text):
 
 # Function to generate metadata for images using AI model
 def generate_metadata(model, img):
-    caption = model.generate_content([
-        "Create a descriptive title in English, 10-15 words long, relevant to the stock photo's subject, object, and background. Avoid mentioning human names, brand, or company names.", img])
-    tags = model.generate_content([
-        "Generate up to 45 keywords that are relevant to the image (each keyword must be one word, separated by commas). "
-        "Do not include mathematical symbols, punctuation marks, separator symbols, emojis, or special characters. "
-        "Ensure that the keywords are highly suitable for the image, only in English.", img
-    ])
+    caption = model.generate_content(["Generate a descriptive title in English up to 12 words long, identifying the main elements of the image. Describe the primary subjects, objects, activities, and context. Refine the title to include relevant keywords for SEO and ensure it is engaging and informative, but avoid mentioning human names, brand names, product names, or company names.", img])
+    tags = model.generate_content(["Generate up to 45 keywords in English that are relevant to the image (each keyword must be one word, separated by commas). Ensure each keyword is a single word, separated by commas.", img])
 
     # Filter out undesirable characters from the generated tags
     filtered_tags = re.sub(r'[^\w\s,]', '', tags.text)
@@ -56,7 +69,7 @@ def generate_metadata(model, img):
     
     return {
         'Title': caption.text.strip(),  # Remove leading/trailing whitespace
-        'Tags': trimmed_tags
+        'Tags': trimmed_tags.strip()
     }
 
 # Function to embed metadata into images
@@ -131,6 +144,13 @@ def upload_to_drive(zip_file_path, credentials):
         st.error(traceback.format_exc())
         return None
 
+def generate_description(model, img):
+    description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
+    return description.text.strip()
+
+def format_midjourney_prompt(description):
+    prompt_text = f"{description} -ar 16:9"
+    return prompt_text
 
 def main():
     """Main function for the Streamlit app."""
@@ -143,21 +163,41 @@ def main():
     </style>
     """, unsafe_allow_html=True)
 
-    # Validation key input
-    validation_key = st.text_input('Password', type='password')
+    # Check if user is logged in
+    if not st.session_state['logged_in']:
+        # Display login form
+        st.title("Login")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type='password')
 
-    # Check if validation key is correct
-    correct_key = "dian"  # Replace "your_validation_key" with your actual validation key
+        if st.button("Login"):
+            # Validate login credentials
+            correct_username = "user"
+            correct_password = "dian"
 
-    if not validation_key:
-        st.warning("Please enter a Password.")
+            if username == correct_username and password == correct_password:
+                if check_lock():
+                    st.error("Another user is currently logged in. Please try again later.")
+                else:
+                    st.session_state['logged_in'] = True
+                    set_lock("logged_in")
+                    st.success("Login successful! Please click the login button once more.")
+            else:
+                st.error("Invalid username or password.")
         return
 
-    if validation_key != correct_key:
-        st.error("Invalid Password. Please enter the correct password.")
+    # Display logout button
+    if st.button("Logout"):
+        st.session_state['logged_in'] = False
+        set_lock("")
+        st.success("Logged out successfully.")
         return
 
-    
+    # Check lock file before proceeding
+    if not check_lock():
+        st.error("Access denied. Your MetaPro Basic Plan subscription is limited to only one device.")
+        return
+
     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
@@ -211,7 +251,11 @@ def main():
             st.success(f"License valid. You have {days_remaining} days remaining.")
 
         # API Key input
-        api_key = st.text_input('Enter your API Key')
+        api_key = st.text_input('Enter your API Key', value=st.session_state['api_key'] or '')
+
+        # Save API key in session state
+        if api_key:
+            st.session_state['api_key'] = api_key
 
         # Upload image files
         uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
@@ -234,13 +278,13 @@ def main():
                             }
                         
                         # Check if remaining uploads are available
-                        if st.session_state['upload_count']['count'] + len(valid_files) > 125:
-                            remaining_uploads = 125 - st.session_state['upload_count']['count']
+                        if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
+                            remaining_uploads = 1000 - st.session_state['upload_count']['count']
                             st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
                             return
                         else:
                             st.session_state['upload_count']['count'] += len(valid_files)
-                            st.success(f"Uploads successful. Remaining uploads for today: {125 - st.session_state['upload_count']['count']}")
+                            st.success(f"Uploads successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
 
                         genai.configure(api_key=api_key)  # Configure AI model with API key
                         model = genai.GenerativeModel('gemini-pro-vision')
@@ -292,7 +336,7 @@ def main():
                             zip_file_path = zip_processed_images(processed_image_paths)
 
                             if zip_file_path:
-                                st.success(f"Successfully zipped processed images to {zip_file_path}")
+                                st.success(f"Successfully zipped processed {zip_file_path}")
 
                                 # Upload zip file to Google Drive and get the shareable link
                                 credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=['https://www.googleapis.com/auth/drive.file'])
@@ -306,30 +350,30 @@ def main():
                         st.error(f"An error occurred: {e}")
                         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
 
-        # Display "About" button
-if st.button("About"):
-    st.markdown("""
-    ### Why Choose MetaPro?
+    # Display "About" button
+    if st.button("About"):
+        st.markdown("""
+        ### Why Choose MetaPro?
 
-    **AI-Powered Precision:** Leverage the power of Google Generative AI to automatically generate highly relevant and descriptive titles and tags for your images. Enhance your image metadata with unprecedented accuracy and relevance.
+        **AI-Powered Precision:** Leverage the power of Google Generative AI to automatically generate highly relevant and descriptive titles and tags for your images. Enhance your image metadata with unprecedented accuracy and relevance.
 
-    **Streamlined Workflow:** Upload your images in just a few clicks. Our app processes each photo, embeds the generated metadata, and prepares it for upload—automatically and effortlessly.
+        **Streamlined Workflow:** Upload your images in just a few clicks. Our app processes each photo, embeds the generated metadata, and prepares it for upload—automatically and effortlessly.
 
-    **Secure and Efficient Gdrive Upload:** Once processed, your images are securely uploaded to gdrive. Keep your workflow smooth and your data safe with our robust upload system.
+        **Secure and Efficient Gdrive Upload:** Once processed, your images are securely uploaded to gdrive. Keep your workflow smooth and your data safe with our robust upload system.
 
-    *How It Works:
-    1. Upload Your Images: Drag and drop your JPG/JPEG files into the uploader.
-    2. Generate Metadata: Watch as the app uses AI to create descriptive titles and relevant tags.
-    3. Embed Metadata: The app embeds the metadata directly into your images.
-    4. Directly upload to Google Drive for faster downloads.
-    
-    **Subscribe Now and Experience the Difference:**
-    - **MetaPro Standard Plan: $9.99/month – Upload up to 1000 images daily for 1 month, includes access to one Adobe Stock account.
-    - **MetaPro Premium Plan: $39.99/month – Unlimited image uploads and access to unlimited Adobe Stock accounts for lifetime.
+        *How It Works:*
+        1. Upload Your Images: Drag and drop your JPG/JPEG files into the uploader.
+        2. Generate Metadata: Watch as the app uses AI to create descriptive titles and relevant tags.
+        3. Embed Metadata: The app embeds the metadata directly into your images.
+        4. Directly upload to Google Drive for faster downloads.
+        
+        **Subscribe Now and Experience the Difference:**
+        - **MetaPro Basic Plan: $10 for 3 months – Upload up to 1,000 images daily.
+        - **MetaPro Premium Plan: $40 for unlimited image uploads for a lifetime.
 
-    Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.
+        Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.
 
-    """)
+        """)
 
 if __name__ == '__main__':
     main()
