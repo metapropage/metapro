@@ -71,7 +71,7 @@ if not st.session_state.authenticated:
 if st.session_state.authenticated:
     if st.session_state.rerun:
         st.session_state.rerun = False
-        st.experimental_rerun()
+        st.rerun()
 
     menu()  # Render the dynamic menu
 
