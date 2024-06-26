@@ -169,7 +169,6 @@ def main():
                             for image_path in image_paths:
                                 img = Image.open(image_path)
                                 description = generate_description(model, img)
-                                midjourney_prompt = format_midjourney_prompt(description)
 
                                 # Display thumbnail
                                 img.thumbnail((150, 150))
