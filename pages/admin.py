@@ -123,14 +123,7 @@ def sftp_upload(image_path, sftp_username, sftp_password, progress_placeholder, 
         sftp.close()
         transport.close()
 
-def main():
-    """Main function for the Streamlit app."""
-
-    # Add elements to the sidebar
-    st.sidebar.title("Sidebar Title")
-    st.sidebar.write("Sidebar content goes here")
-    
-    # Initialize session state for license validation
+def initialize_session_state():
     if 'license_validated' not in st.session_state:
         st.session_state['license_validated'] = False
 
@@ -152,6 +145,15 @@ def main():
     if 'tags_prompt' not in st.session_state:
         st.session_state['tags_prompt'] = ("Generate up to 49 keywords relevant to the image (each keyword must be one word, separated by commas). Avoid using brand names or copyrighted elements in the keywords.")
 
+def main():
+    """Main function for the Streamlit app."""
+
+    initialize_session_state()
+
+    # Add elements to the sidebar
+    st.sidebar.title("Sidebar Title")
+    st.sidebar.write("Sidebar content goes here")
+    
     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
