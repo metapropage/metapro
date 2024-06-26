@@ -1,3 +1,4 @@
+
 import streamlit as st
 import os
 import tempfile
@@ -53,7 +54,7 @@ def normalize_text(text):
 
 # Function to generate detailed description for images using AI model
 def generate_description(model, img):
-    description = model.generate_content(["Create two effective prompts in detailed based on the photo in SEO terms to make it easier for buyers to find this image on the microstock site, and create 49 keywords (MUST 1 word each keyword, separated by commas, no numbers) that are appropriate and relevant to the title"])
+    description = model.generate_content(["Create two effective prompts in detail based on the photo in SEO terms to make it easier for buyers to find this image on the microstock site, and create 49 keywords (MUST 1 word each keyword, separated by commas, no numbers) that are appropriate and relevant to the title"])
     return description.text.strip()
 
 def main():
