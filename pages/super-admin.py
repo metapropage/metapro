@@ -53,7 +53,7 @@ def normalize_text(text):
 
 # Function to generate detailed description for images using AI model
 def generate_description(model, img):
-    description = model.generate_content(["Create detailed four effective prompts in detailed based on the photo in SEO terms to make it easier for buyers to find this image on the microstock site .", img])
+    description = model.generate_content(["Create detailed two effective prompts in detailed based on the photo in SEO terms to make it easier for buyers to find this image on the microstock site .", img])
     return description.text.strip()
 
 def main():
