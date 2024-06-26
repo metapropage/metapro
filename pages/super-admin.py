@@ -53,7 +53,7 @@ def normalize_text(text):
 
 # Function to generate detailed description for images using AI model
 def generate_description(model, img):
-    description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
+    description = model.generate_content(["Please create a detailed description of this image using the following tips and structures: Identify the main elements such as who or what is in the image (main subject), what they are doing (action or activity), and where they are (location or background). Include visual details like colors, shapes, and sizes, clothing or other attributes, and facial expressions or body posture if there are people or animals. Consider the context and atmosphere, noting the time of day (morning, afternoon, night, specific season) and the mood or atmosphere (happy, sad, mysterious). If relevant, describe the style and technique, such as the artistic style (realistic, abstract, impressionistic) and the medium used (painting, photograph, digital art). dont use words : The photo shows ", img])
     return description.text.strip()
 
 # Function to format MidJourney prompt
