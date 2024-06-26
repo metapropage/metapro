@@ -2,8 +2,7 @@ import streamlit as st
 import os
 import tempfile
 from PIL import Image
-import google.generativeai as genai
-import time
+import google.generativeai as genai  # Pastikan ini sesuai dengan modul yang digunakan
 import traceback
 import re
 import unicodedata
@@ -53,8 +52,13 @@ def normalize_text(text):
 
 # Function to generate detailed description for images using AI model
 def generate_description(model, img):
-    description = model.generate_content(["Create two effective prompts in detail based on the photo in SEO terms to make it easier for buyers to find this image on the microstock site, and create 49 keywords (MUST 1 word each keyword, separated by commas, no numbers) that are appropriate and relevant to the title"])
-    return description.text.strip()
+    # Contoh sederhana untuk memulai: mengambil deskripsi dari metadata gambar atau teks sederhana
+    return f"A beautiful landscape with mountains and a clear blue sky."
+
+# Function to format MidJourney prompt
+def format_midjourney_prompt(description):
+    prompt_text = f"{description} -ar 16:9"  # Format prompt sesuai kebutuhan Anda
+    return prompt_text
 
 def main():
     """Main function for the Streamlit app."""
@@ -169,13 +173,14 @@ def main():
                             for image_path in image_paths:
                                 img = Image.open(image_path)
                                 description = generate_description(model, img)
+                                midjourney_prompt = format_midjourney_prompt(description)
 
                                 # Display thumbnail
                                 img.thumbnail((150, 150))
                                 st.image(img)
 
                                 # Display prompt text
-                                st.markdown(f"**MidJourney Prompt:** {description}")
+                                st.markdown(f"**MidJourney Prompt:** {midjourney_prompt}")
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
