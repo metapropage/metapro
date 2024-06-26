@@ -175,7 +175,7 @@ def main():
                                 st.image(img)
 
                                 # Display prompt text
-                                st.markdown(f"**MidJourney Prompt:** {midjourney_prompt}")
+                                st.markdown(f"**MidJourney Prompt:** {description}")
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
