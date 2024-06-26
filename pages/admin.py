@@ -12,7 +12,6 @@ import unicodedata
 from datetime import datetime, timedelta
 import pytz
 import json
-import unicodedata
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -46,7 +45,9 @@ def generate_metadata(model, img):
     tags_prompt = st.session_state['tags_prompt']
 
     caption = model.generate_content([title_prompt, img])
+    time.sleep(1)  # Delay before processing the next part
     tags = model.generate_content([tags_prompt, img])
+    time.sleep(1)  # Delay before returning the result
 
     # Extracting keywords and ensuring they are single words
     keywords = re.findall(r'\w+', tags.text)
@@ -62,7 +63,7 @@ def generate_metadata(model, img):
 
     return {
         'Title': caption.text.strip(),  # Strip leading/trailing whitespace from caption
-        'Tags': tags.text
+        'Tags': trimmed_tags  # Use the trimmed tags
     }
 
 # Function to embed metadata into images
@@ -290,6 +291,8 @@ def main():
                                     # Embed metadata
                                     updated_image_path = embed_metadata(image_path, metadata, embed_progress_placeholder, files_processed, total_files)
                                     
+                                    # Delay before uploading via SFTP
+                                    time.sleep(1)
                                     # Upload via SFTP
                                     if updated_image_path:
                                         sftp_upload(updated_image_path, sftp_username, sftp_password, upload_progress_placeholder, files_processed, total_files)
