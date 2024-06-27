@@ -9,6 +9,7 @@ import pytz
 from menu import menu_with_redirect
 import pandas as pd
 from fpdf import FPDF
+import cairosvg
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -54,12 +55,8 @@ def generate_description(model, img, prompt_template, num_prompts):
 
 def convert_svg_to_png(svg_path):
     try:
-        from svglib.svglib import svg2rlg
-        from reportlab.graphics import renderPM
-
-        drawing = svg2rlg(svg_path)
         png_path = svg_path.replace('.svg', '.png')
-        renderPM.drawToFile(drawing, png_path, fmt='PNG')
+        cairosvg.svg2png(url=svg_path, write_to=png_path)
         return png_path
     except Exception as e:
         st.error(f"Failed to convert SVG to PNG: {e}")
