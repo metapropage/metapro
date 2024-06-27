@@ -46,13 +46,9 @@ if 'upload_count' not in st.session_state:
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
-# Function to normalize and clean text
-def normalize_text(text):
-    normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
-    return normalized
 
 def generate_description(model, img, num_prompts):
-    description = model.generate_content([f"create {num_prompts} prompts for microstock photostock Adobe Stock. The prompts must be able to produce images exactly like this one.", img])
+    description = model.generate_content([f"create {num_prompts} prompts for microstock photostock. The prompts must be able to produce images exactly like this one.", img])
     return description.text.strip()
 
 def convert_svg_to_png(svg_path):
