@@ -280,11 +280,38 @@ def main():
                             progress_bar = progress_placeholder.progress(0)
                             progress_placeholder.text(f"Processing images 0/{total_files}")
 
-                                    # Display thumbnails and descriptions
-                                    for image_path in processed_image_paths:
-                                        img = Image.open(image_path)
-                                        description = generate_description(model, img)
-                                        st.image(img, caption=description, width=150)
+                            processed_image_paths = []
+                            for image_path, metadata in zip(image_paths, metadata_list):
+                                try:
+                                    processed_image_path = embed_metadata(image_path, metadata, progress_bar, files_processed, total_files)
+                                    processed_image_paths.append(processed_image_path)
+                                except Exception as e:
+                                    st.error(f"An error occurred while embedding metadata for {os.path.basename(image_path)}: {e}")
+                                    st.error(traceback.format_exc())
+                                    continue
+
+                            # Zip processed images
+                            zip_file_path = zip_processed_images(processed_image_paths)
+
+                            if zip_file_path:
+                                st.success("Images processed successfully!")
+
+                                # Upload to Google Drive
+                                if st.session_state['api_key']:
+                                    credentials_info = json.loads(st.session_state['api_key'])
+                                    credentials = service_account.Credentials.from_service_account_info(credentials_info)
+                                    drive_link = upload_to_drive(zip_file_path, credentials)
+
+                                    if drive_link:
+                                        st.success(f"Images uploaded to Google Drive. [Download Here]({drive_link})")
+                                    else:
+                                        st.error("Failed to upload images to Google Drive.")
+
+                                # Display thumbnails and descriptions
+                                for image_path in processed_image_paths:
+                                    img = Image.open(image_path)
+                                    description = generate_description(model, img)
+                                    st.image(img, caption=description, width=150)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
