@@ -1,3 +1,4 @@
+
 import streamlit as st
 import os
 import tempfile
@@ -46,7 +47,7 @@ if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
 def generate_prompts(image_paths):
-    """Generate text-to-image prompts for MidJourney based on uploaded images."""
+    ""create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9."""
     prompts = []
     for image_path in image_paths:
         image_name = os.path.basename(image_path).replace("_", " ").replace(".jpg", "").replace(".jpeg", "")
