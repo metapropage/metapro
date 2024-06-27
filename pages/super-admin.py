@@ -2,7 +2,7 @@ import streamlit as st
 import os
 import tempfile
 from PIL import Image
-import google.generativeai as genai  # Pastikan ini sesuai dengan modul yang digunakan
+import google.generativeai as genai  # Ensure this is the correct module
 import traceback
 import re
 import unicodedata
@@ -44,21 +44,16 @@ if 'upload_count' not in st.session_state:
 
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
-
-# Function to normalize and clean text
-def normalize_text(text):
-    normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
-    return normalized
-
+    
 # Function to generate detailed description for images using AI model
 def generate_description(model, img):
-    # Contoh sederhana untuk memulai: mengambil deskripsi dari metadata gambar atau teks sederhana
+    # Example to start with: taking description from image metadata or simple text
     return f"A beautiful landscape with mountains and a clear blue sky."
 
 # Function to format MidJourney prompt
 def format_midjourney_prompt(description):
-    prompt_text = f"{description} -ar 16:9"  # Format prompt sesuai kebutuhan Anda
-    return prompt_text
+    prompt_texts = [f"I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9"] * 10
+    return prompt_texts
 
 def main():
     """Main function for the Streamlit app."""
@@ -173,14 +168,15 @@ def main():
                             for image_path in image_paths:
                                 img = Image.open(image_path)
                                 description = generate_description(model, img)
-                                midjourney_prompt = format_midjourney_prompt(description)
+                                midjourney_prompts = format_midjourney_prompt(description)
 
                                 # Display thumbnail
                                 img.thumbnail((150, 150))
                                 st.image(img)
 
-                                # Display prompt text
-                                st.markdown(f"**MidJourney Prompt:** {midjourney_prompt}")
+                                # Display prompt texts
+                                for prompt in midjourney_prompts:
+                                    st.markdown(f"**MidJourney Prompt:** {prompt}")
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
