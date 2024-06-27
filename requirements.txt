@@ -22,3 +22,4 @@ reportlab
 Wand
 pandas
 FPDF
+openpyxl
