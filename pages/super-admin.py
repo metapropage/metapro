@@ -29,30 +29,25 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Set the timezone to UTC+7 Jakarta
-JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
-
-# Initialize session state for license validation
-if 'license_validated' not in st.session_state:
-    st.session_state['license_validated'] = False
-
-if 'upload_count' not in st.session_state:
-    st.session_state['upload_count'] = {
-        'date': None,
-        'count': 0
-    }
-
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
-def generate_prompts(image_paths):
-    """Create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9."""
-    prompts = []
-    for image_path in image_paths:
-        image_name = os.path.basename(image_path).replace("_", " ").replace(".jpg", "").replace(".jpeg", "")
-        prompt = f"Create an image of {image_name} in a highly realistic and detailed style -ar 16:9"
-        prompts.append(prompt)
-    return prompts
+if 'upload_count' not in st.session_state:
+    st.session_state['upload_count'] = {'date': datetime.now().date(), 'count': 0}
+
+def generate_metadata(model, img_path):
+    with open(img_path, 'rb') as img_file:
+        img_data = img_file.read()
+    
+    caption = model.generate_content([
+        "Create a descriptive title in English, 10-15 words long, relevant to the stock photo's subject, object, and background. Avoid mentioning human names, brand, or company names.", img_data])
+    tags = model.generate_content([
+        "Generate up to 45 keywords that are relevant to the image (each keyword must be one word, separated by commas). "
+        "Do not include mathematical symbols, punctuation marks, separator symbols, emojis, or special characters. "
+        "Ensure that the keywords are highly suitable for the image, only in English.", img_data
+    ])
+    
+    return caption, tags
 
 def main():
     """Main function for the Streamlit app."""
@@ -68,104 +63,66 @@ def main():
     </div>
     """, unsafe_allow_html=True)
 
-    # Check if license has already been validated
-    license_file = "license.txt"
-    if not st.session_state['license_validated']:
-        if os.path.exists(license_file):
-            with open(license_file, 'r') as file:
-                start_date_str = file.read().strip()
-                start_date = datetime.fromisoformat(start_date_str)
-                st.session_state['license_validated'] = True
-        else:
-            # License key input
-            validation_key = st.text_input('License Key', type='password')
+    # API Key input
+    api_key = st.text_input('Enter your API Key')
 
-    # Check if validation key is correct
-    correct_key = "dian12345"
+    # Save API key in session state
+    if api_key:
+        st.session_state['api_key'] = api_key
 
-    if not st.session_state['license_validated'] and validation_key:
-        if validation_key == correct_key:
-            st.session_state['license_validated'] = True
-            start_date = datetime.now(JAKARTA_TZ)
-            with open(license_file, 'w') as file:
-                file.write(start_date.isoformat())
-        else:
-            st.error("Invalid validation key. Please enter the correct key.")
+    # Upload image files
+    uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
 
-    if st.session_state['license_validated']:
-        # Check the license file for the start date
-        with open(license_file, 'r') as file:
-            start_date_str = file.read().strip()
-            start_date = datetime.fromisoformat(start_date_str)
+    if uploaded_files:
+        valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
+        invalid_files = [file for file in uploaded_files if file not in valid_files]
 
-        # Calculate the expiration date
-        expiration_date = start_date + timedelta(days=31)
-        current_date = datetime.now(JAKARTA_TZ)
+        if invalid_files:
+            st.error("Only JPG and JPEG files are supported.")
 
-        if current_date > expiration_date:
-            st.error("Your license has expired. Please contact support for a new license key.")
-            return
-        else:
-            days_remaining = (expiration_date - current_date).days
-            st.success(f"License valid. You have {days_remaining} days remaining.")
+        if valid_files and st.button("Process"):
+            with st.spinner("Processing..."):
+                try:
+                    current_date = datetime.now()
+                    
+                    # Check and update upload count for the current date
+                    if st.session_state['upload_count']['date'] != current_date.date():
+                        st.session_state['upload_count'] = {
+                            'date': current_date.date(),
+                            'count': 0
+                        }
+                    
+                    # Check if remaining uploads are available
+                    if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
+                        remaining_uploads = 1000 - st.session_state['upload_count']['count']
+                        st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
+                        return
+                    else:
+                        st.session_state['upload_count']['count'] += len(valid_files)
+                        st.success(f"Uploads successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
 
-        # API Key input
-        api_key = st.text_input('Enter your API Key')
+                    genai.configure(api_key=api_key)  # Configure AI model with API key
+                    model = genai.GenerativeModel('gemini-pro-vision')
 
-        # Save API key in session state
-        if api_key:
-            st.session_state['api_key'] = api_key
-
-        # Upload image files
-        uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
-
-        if uploaded_files:
-            valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
-            invalid_files = [file for file in uploaded_files if file not in valid_files]
-
-            if invalid_files:
-                st.error("Only JPG and JPEG files are supported.")
-
-            if valid_files and st.button("Process"):
-                with st.spinner("Processing..."):
-                    try:
-                        # Check and update upload count for the current date
-                        if st.session_state['upload_count']['date'] != current_date.date():
-                            st.session_state['upload_count'] = {
-                                'date': current_date.date(),
-                                'count': 0
-                            }
+                    # Create a temporary directory to store the uploaded images
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        # Save the uploaded images to the temporary directory
+                        image_paths = []
+                        for file in valid_files:
+                            temp_image_path = os.path.join(temp_dir, file.name)
+                            with open(temp_image_path, 'wb') as f:
+                                f.write(file.read())
+                            image_paths.append(temp_image_path)
                         
-                        # Check if remaining uploads are available
-                        if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
-                            remaining_uploads = 1000 - st.session_state['upload_count']['count']
-                            st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
-                            return
-                        else:
-                            st.session_state['upload_count']['count'] += len(valid_files)
-                            st.success(f"Uploads successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
+                        # Generate metadata for each image
+                        for img_path in image_paths:
+                            caption, tags = generate_metadata(model, img_path)
+                            st.write(f"Title: {caption}")
+                            st.write(f"Keywords: {tags}")
 
-                        genai.configure(api_key=api_key)  # Configure AI model with API key
-                        model = genai.GenerativeModel('gemini-pro-vision')
-
-                        # Create a temporary directory to store the uploaded images
-                        with tempfile.TemporaryDirectory() as temp_dir:
-                            # Save the uploaded images to the temporary directory
-                            image_paths = []
-                            for file in valid_files:
-                                temp_image_path = os.path.join(temp_dir, file.name)
-                                with open(temp_image_path, 'wb') as f:
-                                    f.write(file.read())
-                                image_paths.append(temp_image_path)
-                            
-                            # Generate prompts for the uploaded images
-                            prompts = generate_prompts(image_paths)
-                            st.success("Prompts generated successfully!")
-                            st.write(prompts)
-
-                    except Exception as e:
-                        st.error(f"An error occurred: {e}")
-                        st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+                    st.error(traceback.format_exc())  # Print detailed error traceback for debugging
 
 if __name__ == '__main__':
     main()
