@@ -11,9 +11,6 @@ import re
 import unicodedata
 from datetime import datetime, timedelta
 import pytz
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
 from menu import menu_with_redirect
 
 st.set_option("client.showSidebarNavigation", False)
@@ -119,28 +116,6 @@ def zip_processed_images(image_paths):
 
     except Exception as e:
         st.error(f"An error occurred while zipping images: {e}")
-        st.error(traceback.format_exc())
-        return None
-
-def upload_to_drive(zip_file_path, credentials):
-    try:
-        service = build('drive', 'v3', credentials=credentials)
-        file_metadata = {
-            'name': os.path.basename(zip_file_path),
-            'mimeType': 'application/zip'
-        }
-        media = MediaFileUpload(zip_file_path, mimetype='application/zip', resumable=True)
-        file = service.files().create(body=file_metadata, media_body=media, fields='id,webViewLink').execute()
-
-        # Make the file publicly accessible
-        service.permissions().create(
-            fileId=file['id'],
-            body={'type': 'anyone', 'role': 'reader'}
-        ).execute()
-
-        return file.get('webViewLink')
-    except Exception as e:
-        st.error(f"An error occurred while uploading to Google Drive: {e}")
         st.error(traceback.format_exc())
         return None
 
@@ -294,17 +269,6 @@ def main():
 
                             if zip_file_path:
                                 st.success("Images processed successfully!")
-
-                                # Upload to Google Drive
-                                if st.session_state['api_key']:
-                                    credentials_info = json.loads(st.session_state['api_key'])
-                                    credentials = service_account.Credentials.from_service_account_info(credentials_info)
-                                    drive_link = upload_to_drive(zip_file_path, credentials)
-
-                                    if drive_link:
-                                        st.success(f"Images uploaded to Google Drive. [Download Here]({drive_link})")
-                                    else:
-                                        st.error("Failed to upload images to Google Drive.")
 
                                 # Display thumbnails and descriptions
                                 for image_path in processed_image_paths:
