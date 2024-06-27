@@ -19,3 +19,6 @@ pydrive2
 uuid
 cairosvg
 cairocffi
+svglib
+reportlab
+Wand
