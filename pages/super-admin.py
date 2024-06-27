@@ -196,9 +196,8 @@ def main():
                                 # Display thumbnail and prompts
                                 st.image(img, width=100)
                                 st.markdown("## Prompts\n")
-                                for j, prompt in enumerate(prompts):
+                                for prompt in prompts:
                                     if prompt.strip():  # Only display non-empty prompts
-                                        st.markdown(f"### Prompt {j+1}\n")
                                         st.markdown(f"{prompt.strip()}\n")
 
                 except Exception as e:
