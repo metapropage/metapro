@@ -204,10 +204,14 @@ def main():
                                 st.success("Images processed successfully!")
 
                                 # Display thumbnails and descriptions
-                                for image_path in processed_image_paths:
+                                for i, image_path in enumerate(processed_image_paths):
                                     img = Image.open(image_path)
                                     description = generate_description(model, img)
-                                    st.image(img, caption=description, width=150)
+                                    prompts = description.split("\n")
+                                    for j, prompt in enumerate(prompts):
+                                        st.markdown(f"### Prompt {j+1}\n")
+                                        st.markdown(f"{prompt.strip()} -ar 16:9\n")
+                                        st.image(img, width=100)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
