@@ -52,58 +52,6 @@ def normalize_text(text):
     normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
     return normalized
 
-# Function to generate metadata for images using AI model
-def generate_metadata(model, img):
-    caption = model.generate_content(["Generate a descriptive title in English up to 12 words long, identifying the main elements of the image. Describe the primary subjects, objects, activities, and context. Refine the title to include relevant keywords for SEO and ensure it is engaging and informative, but avoid mentioning human names, brand names, product names, or company names.", img])
-    tags = model.generate_content(["Generate up to 45 keywords in English that are relevant to the image (each keyword must be one word, separated by commas). Ensure each keyword is a single word, separated by commas.", img])
-
-    # Filter out undesirable characters from the generated tags
-    filtered_tags = re.sub(r'[^\w\s,]', '', tags.text)
-    
-    # Trim the generated keywords if they exceed 49 words
-    keywords = filtered_tags.split(',')[:49]  # Limit to 49 words
-    trimmed_tags = ','.join(keywords)
-    
-    return {
-        'Title': caption.text.strip(),  # Remove leading/trailing whitespace
-        'Tags': trimmed_tags.strip()
-    }
-
-# Function to embed metadata into images
-def embed_metadata(image_path, metadata, progress_bar, files_processed, total_files):
-    try:
-        # Simulate delay
-        time.sleep(1)
-
-        # Open the image file
-        img = Image.open(image_path)
-
-        # Load existing IPTC data (if any)
-        iptc_data = iptcinfo3.IPTCInfo(image_path, force=True)
-
-        # Clear existing IPTC metadata
-        for tag in iptc_data._data:
-            iptc_data._data[tag] = []
-
-        # Update IPTC data with new metadata
-        iptc_data['keywords'] = [metadata.get('Tags', '')]  # Keywords
-        iptc_data['caption/abstract'] = [metadata.get('Title', '')]  # Title
-
-        # Save the image with the embedded metadata
-        iptc_data.save()
-
-        # Update progress bar
-        files_processed += 1
-        progress_bar.progress(files_processed / total_files)
-        progress_bar.text(f"Embedding metadata for image {files_processed}/{total_files}")
-
-        # Return the updated image path for further processing
-        return image_path
-
-    except Exception as e:
-        st.error(f"An error occurred while embedding metadata: {e}")
-        st.error(traceback.format_exc())  # Print detailed error traceback for debugging
-
 def zip_processed_images(image_paths):
     try:
         zip_file_path = os.path.join(tempfile.gettempdir(), 'processed_images.zip')
@@ -231,21 +179,7 @@ def main():
                                     f.write(file.read())
                                 image_paths.append(temp_image_path)
 
-                            # Process each image and generate titles and tags using AI
-                            metadata_list = []
-                            process_placeholder = st.empty()
-                            for i, image_path in enumerate(image_paths):
-                                process_placeholder.text(f"Processing Generate Titles and Tags {i + 1}/{len(image_paths)}")
-                                try:
-                                    img = Image.open(image_path)
-                                    metadata = generate_metadata(model, img)
-                                    metadata_list.append(metadata)
-                                except Exception as e:
-                                    st.error(f"An error occurred while generating metadata for {os.path.basename(image_path)}: {e}")
-                                    st.error(traceback.format_exc())
-                                    continue
-
-                            # Embed metadata into images
+                            # Process each image
                             total_files = len(image_paths)
                             files_processed = 0
 
@@ -255,12 +189,11 @@ def main():
                             progress_placeholder.text(f"Processing images 0/{total_files}")
 
                             processed_image_paths = []
-                            for image_path, metadata in zip(image_paths, metadata_list):
+                            for image_path in image_paths:
                                 try:
-                                    processed_image_path = embed_metadata(image_path, metadata, progress_bar, files_processed, total_files)
-                                    processed_image_paths.append(processed_image_path)
+                                    processed_image_paths.append(image_path)
                                 except Exception as e:
-                                    st.error(f"An error occurred while embedding metadata for {os.path.basename(image_path)}: {e}")
+                                    st.error(f"An error occurred while processing {os.path.basename(image_path)}: {e}")
                                     st.error(traceback.format_exc())
                                     continue
 
