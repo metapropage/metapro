@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 import tempfile
-from PIL import Image
+from PIL import Image, ImageOps
 import google.generativeai as genai
 import iptcinfo3
 import traceback
@@ -9,9 +9,8 @@ import re
 import unicodedata
 from datetime import datetime, timedelta
 import pytz
-import cairosvg  # For converting SVG to PNG
-from wand.image import Image as WandImage  # For converting EPS to JPEG
 from menu import menu_with_redirect
+from io import BytesIO
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -60,13 +59,29 @@ def format_midjourney_prompt(description):
     prompt_text = f"{description} -ar 16:9"
     return prompt_text
 
-def convert_svg_to_png(svg_path, output_path):
-    cairosvg.svg2png(url=svg_path, write_to=output_path)
+def convert_svg_to_png(svg_path):
+    try:
+        from svglib.svglib import svg2rlg
+        from reportlab.graphics import renderPM
 
-def convert_eps_to_jpeg(eps_path, output_path):
-    with WandImage(filename=eps_path) as img:
-        img.format = 'jpeg'
-        img.save(filename=output_path)
+        drawing = svg2rlg(svg_path)
+        png_path = svg_path.replace('.svg', '.png')
+        renderPM.drawToFile(drawing, png_path, fmt='PNG')
+        return png_path
+    except Exception as e:
+        st.error(f"Failed to convert SVG to PNG: {e}")
+        return None
+
+def convert_eps_to_jpeg(eps_path):
+    try:
+        with WandImage(filename=eps_path) as img:
+            img.format = 'jpeg'
+            jpeg_path = eps_path.replace('.eps', '.jpg')
+            img.save(filename=jpeg_path)
+            return jpeg_path
+    except Exception as e:
+        st.error(f"Failed to convert EPS to JPEG: {e}")
+        return None
 
 def main():
     """Main function for the Streamlit app."""
@@ -164,26 +179,23 @@ def main():
 
                         # Convert SVG and EPS to JPEG if needed
                         if uploaded_file.type == 'image/svg+xml':
-                            temp_converted_path = os.path.join(temp_dir, 'converted_image.png')
-                            convert_svg_to_png(temp_image_path, temp_converted_path)
-                            temp_image_path = temp_converted_path
+                            temp_image_path = convert_svg_to_png(temp_image_path)
                         elif uploaded_file.type == 'application/postscript':
-                            temp_converted_path = os.path.join(temp_dir, 'converted_image.jpg')
-                            convert_eps_to_jpeg(temp_image_path, temp_converted_path)
-                            temp_image_path = temp_converted_path
+                            temp_image_path = convert_eps_to_jpeg(temp_image_path)
 
                         # Open the image
-                        img = Image.open(temp_image_path)
+                        if temp_image_path:
+                            img = Image.open(temp_image_path)
 
-                        # Generate description and prompts
-                        description = generate_description(model, img)
-                        prompts = description.split("\n")
-                        
-                        # Display thumbnails and descriptions
-                        st.image(img, width=100)
-                        for j, prompt in enumerate(prompts):
-                            st.markdown(f"### Prompt {j+1}\n")
-                            st.markdown(f"{prompt.strip()} -ar 16:9\n")
+                            # Generate description and prompts
+                            description = generate_description(model, img)
+                            prompts = description.split("\n")
+                            
+                            # Display thumbnails and descriptions
+                            st.image(img, width=100)
+                            for j, prompt in enumerate(prompts):
+                                st.markdown(f"### Prompt {j+1}\n")
+                                st.markdown(f"{prompt.strip()} -ar 16:9\n")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
