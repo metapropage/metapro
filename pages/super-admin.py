@@ -156,6 +156,3 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
-
-if __name__ == '__main__':
-    main()
