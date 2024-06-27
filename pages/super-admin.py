@@ -45,28 +45,18 @@ if 'upload_count' not in st.session_state:
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
-# Function to normalize and clean text
-def normalize_text(text):
-    normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
-    return normalized
-
-# Function to generate detailed description for images using AI model
-def generate_description(model, img):
-    # Example to start with: taking description from image metadata or simple text
-    return f"A photorealistic image of a sleek silver laptop computer with a black keyboard, a black cellphone, and a pair of stylish eyeglasses with black frames, all resting on a natural wood table with a warm finish."
-
-# Function to format MidJourney prompt
-def format_midjourney_prompt(description):
-    prompt_texts = [f"{description} - ar 16:9"] * 10
-    return prompt_texts
+def generate_prompts(image_paths):
+    """Generate text-to-image prompts for MidJourney based on uploaded images."""
+    prompts = []
+    for image_path in image_paths:
+        image_name = os.path.basename(image_path).replace("_", " ").replace(".jpg", "").replace(".jpeg", "")
+        prompt = f"Create an image of {image_name} in a highly realistic and detailed style -ar 16:9"
+        prompts.append(prompt)
+    return prompts
 
 def main():
     """Main function for the Streamlit app."""
-
-    # Add elements to the sidebar
-    st.sidebar.title("Sidebar Title")
-    st.sidebar.write("Sidebar content goes here")
-
+    
     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
@@ -167,21 +157,11 @@ def main():
                                 with open(temp_image_path, 'wb') as f:
                                     f.write(file.read())
                                 image_paths.append(temp_image_path)
-
-                            # Generate and display MidJourney prompt texts and thumbnails
-                            st.markdown("## Generated MidJourney Prompts")
-                            for image_path in image_paths:
-                                img = Image.open(image_path)
-                                description = generate_description(model, img)
-                                midjourney_prompts = format_midjourney_prompt(description)
-
-                                # Display thumbnail
-                                img.thumbnail((150, 150))
-                                st.image(img)
-
-                                # Display prompt texts
-                                for prompt in midjourney_prompts:
-                                    st.markdown(f"**MidJourney Prompt:** {prompt}")
+                            
+                            # Generate prompts for the uploaded images
+                            prompts = generate_prompts(image_paths)
+                            st.success("Prompts generated successfully!")
+                            st.write(prompts)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
