@@ -194,17 +194,13 @@ def main():
 
                                 # Generate description and prompts
                                 description = generate_description(model, img, num_prompts)
-                                prompts = description.split("\n")
-                                
-                                # Add additional text to prompts
-                                prompts_with_text = [f"{prompt.strip()} {additional_text}" for prompt in prompts]
+                                prompts = [f"{prompt.strip()} {additional_text}" for prompt in description.split("\n") if prompt.strip()]
 
                                 # Display thumbnail and prompts
                                 st.image(img, width=100)
                                 st.markdown("<div class='prompt-title'>Prompts</div>", unsafe_allow_html=True)
-                                for prompt in prompts_with_text:
-                                    if prompt.strip():  # Only display non-empty prompts
-                                        st.markdown(f"{prompt.strip()}\n")
+                                for prompt in prompts:
+                                    st.markdown(f"{prompt}\n")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
