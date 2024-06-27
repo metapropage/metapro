@@ -1,18 +1,16 @@
 import streamlit as st
 import os
 import tempfile
-from PIL import Image
+from PIL import Image, ImageOps
 import google.generativeai as genai
 import iptcinfo3
-import zipfile
-import time
 import traceback
 import re
 import unicodedata
 from datetime import datetime, timedelta
 import pytz
-import paramiko
 from menu import menu_with_redirect
+from io import BytesIO
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -35,120 +33,61 @@ st.markdown("""
 # Set the timezone to UTC+7 Jakarta
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
 
-# Function to generate metadata for images using AI model
-def generate_metadata(model, img):
-    title_prompt = st.session_state['title_prompt']
-    tags_prompt = st.session_state['tags_prompt']
-    
-    # Generate title
-    title_response = model.generate_content([title_prompt, img])
-    title = title_response.text.strip()
+# Initialize session state for license validation
+if 'license_validated' not in st.session_state:
+    st.session_state['license_validated'] = False
 
-    # Generate tags based on the image and the generated title
-    tags_response = model.generate_content([f"{tags_prompt}. The image contains '{title}'", img])
-    tags = tags_response.text
-    
-    # Extract keywords and ensure they are single words
-    keywords = re.findall(r'\w+', tags)
-    
-    # Convert keywords to lowercase
-    keywords = [word.lower() for word in keywords]
-    
-    # Limit keywords to 49 words and remove duplicates
-    unique_keywords = list(set(keywords))[:49]
-    
-    # Join keywords with commas
-    trimmed_tags = ','.join(unique_keywords)
-    
-    return {
-        'Title': title,
-        'Tags': trimmed_tags
+if 'upload_count' not in st.session_state:
+    st.session_state['upload_count'] = {
+        'date': None,
+        'count': 0
     }
 
-# Function to embed metadata into images
-def embed_metadata(image_path, metadata, progress_placeholder, files_processed, total_files):
+if 'api_key' not in st.session_state:
+    st.session_state['api_key'] = None
+
+# Function to normalize and clean text
+def normalize_text(text):
+    normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+    return normalized
+
+def generate_description(model, img, num_prompts):
+    description = model.generate_content([f"create {num_prompts} prompts for microstock photostock Adobe Stock. The prompts must be able to produce images exactly like this one. include subject, style, and context.", img])
+    return description.text.strip()
+
+def format_midjourney_prompt(description):
+    prompt_text = f"{description} -ar 16:9"
+    return prompt_text
+
+def convert_svg_to_png(svg_path):
     try:
-        # Simulate delay
-        time.sleep(1)
+        from svglib.svglib import svg2rlg
+        from reportlab.graphics import renderPM
 
-        # Open the image file
-        img = Image.open(image_path)
-
-        # Load existing IPTC data (if any)
-        iptc_data = iptcinfo3.IPTCInfo(image_path, force=True)
-
-        # Clear existing IPTC metadata
-        for tag in iptc_data._data:
-            iptc_data._data[tag] = []
-
-        # Update IPTC data with new metadata
-        iptc_data['keywords'] = [metadata.get('Tags', '')]  # Keywords
-        iptc_data['caption/abstract'] = [metadata.get('Title', '')]  # Title
-
-        # Save the image with the embedded metadata
-        iptc_data.save()
-
-        # Update progress text
-        files_processed += 1
-        progress_placeholder.text(f"Processing images to generate titles, tags, and embed metadata {files_processed}/{total_files}")
-
-        # Return the updated image path for further processing
-        return image_path
-
+        drawing = svg2rlg(svg_path)
+        png_path = svg_path.replace('.svg', '.png')
+        renderPM.drawToFile(drawing, png_path, fmt='PNG')
+        return png_path
     except Exception as e:
-        st.error(f"An error occurred while embedding metadata: {e}")
-        st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+        st.error(f"Failed to convert SVG to PNG: {e}")
+        return None
 
-def sftp_upload(image_path, sftp_username, sftp_password, progress_placeholder, files_processed, total_files):
-    # SFTP connection details
-    sftp_host = "sftp.contributor.adobestock.com"
-    sftp_port = 22
-
-    # Initialize SFTP connection
-    transport = paramiko.Transport((sftp_host, sftp_port))
-    transport.connect(username=sftp_username, password=sftp_password)
-    sftp = paramiko.SFTPClient.from_transport(transport)
-
+def convert_eps_to_jpeg(eps_path):
     try:
-        filename = os.path.basename(image_path)
-        sftp.put(image_path, f"/your/remote/directory/path/{filename}")  # Replace with your remote directory path
-        progress_placeholder.text(f"Uploaded {files_processed + 1}/{total_files} files to SFTP server.")
+        from wand.image import Image as WandImage
 
+        with WandImage(filename=eps_path) as img:
+            img.format = 'jpeg'
+            jpeg_path = eps_path.replace('.eps', '.jpg')
+            img.save(filename=jpeg_path)
+            return jpeg_path
     except Exception as e:
-        st.error(f"Error during SFTP upload: {e}")
-        st.error(traceback.format_exc())
-
-    finally:
-        sftp.close()
-        transport.close()
-
-def initialize_session_state():
-    if 'license_validated' not in st.session_state:
-        st.session_state['license_validated'] = False
-
-    if 'upload_count' not in st.session_state:
-        st.session_state['upload_count'] = {
-            'date': None,
-            'count': 0
-        }
-
-    if 'api_key' not in st.session_state:
-        st.session_state['api_key'] = None
-
-    if 'sftp_username' not in st.session_state:
-        st.session_state['sftp_username'] = "209940897"
-
-    if 'title_prompt' not in st.session_state:
-        st.session_state['title_prompt'] = ("Create a descriptive title in English up to 12 words long. Ensure the keywords accurately reflect the subject matter, context, and main elements of the image, using precise terms that capture unique aspects like location, activity, or theme for specificity. Maintain variety and consistency in keywords relevant to the image content. Avoid using brand names or copyrighted elements in the title.")
-
-    if 'tags_prompt' not in st.session_state:
-        st.session_state['tags_prompt'] = ("Generate up to 49 keywords relevant to the image (each keyword must be one word, separated by commas). Avoid using brand names or copyrighted elements in the keywords.")
+        st.error(f"Failed to convert EPS to JPEG: {e}")
+        return None
 
 def main():
     """Main function for the Streamlit app."""
 
-    initialize_session_state()
-    
     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
@@ -185,7 +124,7 @@ def main():
             st.error("Invalid validation key. Please enter the correct key.")
 
     if st.session_state['license_validated']:
-        # Read start date from license file
+        # Check the license file for the start date
         with open(license_file, 'r') as file:
             start_date_str = file.read().strip()
             start_date = datetime.fromisoformat(start_date_str)
@@ -208,103 +147,69 @@ def main():
         if api_key:
             st.session_state['api_key'] = api_key
 
-        # SFTP Username input
-        sftp_username = st.text_input('SFTP Username', value=st.session_state['sftp_username'])
+        # Number of files to upload
+        num_files = st.number_input('Enter the number of files to upload', min_value=1, max_value=10, value=1)
 
-        # Save SFTP username in session state
-        if sftp_username:
-            st.session_state['sftp_username'] = sftp_username
-
-        # SFTP Password input
-        sftp_password = st.text_input('SFTP Password', type='password')
-
-        # Commented out the Title and tags prompts input
-        # title_prompt = st.text_area('Title Prompt', value=st.session_state['title_prompt'], height=100)
-        # tags_prompt = st.text_area('Tags Prompt', value=st.session_state['tags_prompt'], height=100)
-
-        # Save prompts in session state
-        # st.session_state['title_prompt'] = title_prompt
-        # st.session_state['tags_prompt'] = tags_prompt
+        # Number of prompts to generate
+        num_prompts = st.number_input('Enter the number of prompts to generate', min_value=1, max_value=10, value=4)
 
         # Upload image files
-        uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
+        uploaded_files = st.file_uploader(f'Upload {num_files} Image(s) (JPG, JPEG, PNG, SVG, EPS supported)', type=['jpg', 'jpeg', 'png', 'svg', 'eps'], accept_multiple_files=True, key="file_uploader")
 
-        if uploaded_files:
-            valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
-            invalid_files = [file for file in uploaded_files if file not in valid_files]
+        if uploaded_files and len(uploaded_files) == num_files and st.button("Process"):
+            with st.spinner("Processing..."):
+                try:
+                    # Check and update upload count for the current date
+                    if st.session_state['upload_count']['date'] != current_date.date():
+                        st.session_state['upload_count'] = {
+                            'date': current_date.date(),
+                            'count': 0
+                        }
 
-            if invalid_files:
-                st.error("Only JPG and JPEG files are supported.")
+                    # Check if remaining uploads are available
+                    if st.session_state['upload_count']['count'] >= 1000:
+                        remaining_uploads = 0
+                        st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
+                        return
+                    else:
+                        st.session_state['upload_count']['count'] += num_files
+                        st.success(f"Upload successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
 
-            if valid_files and st.button("Process"):
-                with st.spinner("Processing..."):
-                    try:
-                        # Check and update upload count for the current date
-                        if st.session_state['upload_count']['date'] != current_date.date():
-                            st.session_state['upload_count'] = {
-                                'date': current_date.date(),
-                                'count': 0
-                            }
+                    genai.configure(api_key=api_key)  # Configure AI model with API key
+                    model = genai.GenerativeModel('gemini-pro-vision')
 
-                        # Check if remaining uploads are available
-                        if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
-                            remaining_uploads = 1000 - st.session_state['upload_count']['count']
-                            st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
-                            return
-                        else:
-                            st.session_state['upload_count']['count'] += len(valid_files)
-                            st.success(f"Uploads successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
+                    # Create a temporary directory to store the uploaded images
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        for uploaded_file in uploaded_files:
+                            # Save the uploaded image to the temporary directory
+                            temp_image_path = os.path.join(temp_dir, uploaded_file.name)
+                            with open(temp_image_path, 'wb') as f:
+                                f.write(uploaded_file.read())
 
-                        genai.configure(api_key=api_key)  # Configure AI model with API key
-                        model = genai.GenerativeModel('gemini-pro-vision')
+                            # Convert SVG and EPS to JPEG if needed
+                            if uploaded_file.type == 'image/svg+xml':
+                                temp_image_path = convert_svg_to_png(temp_image_path)
+                            elif uploaded_file.type == 'application/postscript':
+                                temp_image_path = convert_eps_to_jpeg(temp_image_path)
 
-                        # Create a temporary directory to store the uploaded images
-                        with tempfile.TemporaryDirectory() as temp_dir:
-                            # Save the uploaded images to the temporary directory
-                            image_paths = []
-                            for file in valid_files:
-                                temp_image_path = os.path.join(temp_dir, file.name)
-                                with open(temp_image_path, 'wb') as f:
-                                    f.write(file.read())
-                                image_paths.append(temp_image_path)
+                            # Open the image
+                            if temp_image_path:
+                                img = Image.open(temp_image_path)
 
-                            total_files = len(image_paths)
-                            files_processed = 0
+                                # Generate description and prompts
+                                description = generate_description(model, img, num_prompts)
+                                prompts = description.split("\n")
 
-                            # Progress placeholder for embedding metadata
-                            embed_progress_placeholder = st.empty()
-                            # Progress placeholder for SFTP upload
-                            upload_progress_placeholder = st.empty()
+                                # Display thumbnail and prompts
+                                st.image(img, width=100)
+                                st.markdown("## Prompts\n")
+                                for j, prompt in enumerate(prompts):
+                                    st.markdown(f"### Prompt {j+1}\n")
+                                    st.markdown(f"{prompt.strip()} -ar 16:9\n")
 
-                            # Process each image one by one
-                            for image_path in image_paths:
-                                try:
-                                    # Open image
-                                    img = Image.open(image_path)
-
-                                    # Generate metadata
-                                    metadata = generate_metadata(model, img)
-
-                                    # Embed metadata
-                                    updated_image_path = embed_metadata(image_path, metadata, embed_progress_placeholder, files_processed, total_files)
-                                    
-                                    # Delay before uploading via SFTP
-                                    time.sleep(1)
-                                    # Upload via SFTP
-                                    if updated_image_path:
-                                        sftp_upload(updated_image_path, sftp_username, sftp_password, upload_progress_placeholder, files_processed, total_files)
-                                        files_processed += 1
-
-                                except Exception as e:
-                                    st.error(f"An error occurred while processing {os.path.basename(image_path)}: {e}")
-                                    st.error(traceback.format_exc())
-                                    continue
-
-                            st.success(f"Successfully processed and transferred {files_processed} files to the SFTP server.")
-
-                    except Exception as e:
-                        st.error(f"An error occurred: {e}")
-                        st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+                    st.error(traceback.format_exc())  # Print detailed error traceback for debugging
 
 if __name__ == '__main__':
     main()
