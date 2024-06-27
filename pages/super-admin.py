@@ -51,8 +51,8 @@ if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
 
-def generate_description(model, img, num_prompts):
-    description = model.generate_content([f"create {num_prompts} prompts for microstock photostock. The prompts must be able to produce images exactly like this one.", img])
+def generate_description(model, img, prompt_template, num_prompts):
+    description = model.generate_content([f"{prompt_template} {num_prompts} prompts.", img])
     return description.text.strip()
 
 def convert_svg_to_png(svg_path):
@@ -143,6 +143,9 @@ def main():
         if api_key:
             st.session_state['api_key'] = api_key
 
+        # Prompt template input
+        prompt_template = st.text_input('Prompt template', value='Create prompts for microstock photostock. The prompts must be able to produce images exactly like this one. Generate')
+
         # Number of prompts to generate
         num_prompts = st.number_input('Enter the number of prompts to generate', min_value=1, max_value=10, value=4)
 
@@ -193,7 +196,7 @@ def main():
                                 img = Image.open(temp_image_path)
 
                                 # Generate description and prompts
-                                description = generate_description(model, img, num_prompts)
+                                description = generate_description(model, img, prompt_template, num_prompts)
                                 prompts = [f"{prompt.strip()} {additional_text}" for prompt in description.split("\n") if prompt.strip()]
 
                                 # Display thumbnail and prompts
