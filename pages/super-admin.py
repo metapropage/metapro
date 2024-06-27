@@ -52,12 +52,8 @@ def normalize_text(text):
     return normalized
 
 def generate_description(model, img, num_prompts):
-    description = model.generate_content([f"create {num_prompts} prompts for microstock photostock Adobe Stock. The prompts must be able to produce images exactly like this one, include subject, style, and context.", img])
+    description = model.generate_content([f"create {num_prompts} prompts for microstock photostock Adobe Stock. The prompts must be able to produce images exactly like this one.", img])
     return description.text.strip()
-
-def format_midjourney_prompt(description):
-    prompt_text = f"{description} -ar 16:9"
-    return prompt_text
 
 def convert_svg_to_png(svg_path):
     try:
@@ -147,16 +143,13 @@ def main():
         if api_key:
             st.session_state['api_key'] = api_key
 
-        # Number of files to upload
-        num_files = st.number_input('Enter the number of files to upload', min_value=1, max_value=10, value=1)
-
         # Number of prompts to generate
         num_prompts = st.number_input('Enter the number of prompts to generate', min_value=1, max_value=10, value=4)
 
         # Upload image files
-        uploaded_files = st.file_uploader(f'Upload {num_files} Image(s) (JPG, JPEG, PNG, SVG, EPS supported)', type=['jpg', 'jpeg', 'png', 'svg', 'eps'], accept_multiple_files=True, key="file_uploader")
+        uploaded_files = st.file_uploader('Upload Images (JPG, JPEG, PNG, SVG, EPS supported)', type=['jpg', 'jpeg', 'png', 'svg', 'eps'], accept_multiple_files=True, key="file_uploader")
 
-        if uploaded_files and len(uploaded_files) == num_files and st.button("Process"):
+        if uploaded_files and st.button("Process"):
             with st.spinner("Processing..."):
                 try:
                     # Check and update upload count for the current date
@@ -172,7 +165,7 @@ def main():
                         st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
                         return
                     else:
-                        st.session_state['upload_count']['count'] += num_files
+                        st.session_state['upload_count']['count'] += len(uploaded_files)
                         st.success(f"Upload successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
 
                     genai.configure(api_key=api_key)  # Configure AI model with API key
@@ -205,7 +198,7 @@ def main():
                                 st.markdown("## Prompts\n")
                                 for j, prompt in enumerate(prompts):
                                     st.markdown(f"### Prompt {j+1}\n")
-                                    st.markdown(f"{prompt.strip()} -ar 16:9\n")
+                                    st.markdown(f"{prompt.strip()}\n")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
