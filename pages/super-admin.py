@@ -11,6 +11,8 @@ from datetime import datetime, timedelta
 import pytz
 from menu import menu_with_redirect
 from io import BytesIO
+import pandas as pd
+from fpdf import FPDF
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -50,7 +52,6 @@ if 'upload_count' not in st.session_state:
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
-
 def generate_description(model, img, prompt_template, num_prompts):
     description = model.generate_content([f"{prompt_template} {num_prompts} prompts.", img])
     return description.text.strip()
@@ -80,6 +81,20 @@ def convert_eps_to_jpeg(eps_path):
     except Exception as e:
         st.error(f"Failed to convert EPS to JPEG: {e}")
         return None
+
+def save_prompts_to_excel(prompts, file_name="prompts.xlsx"):
+    df = pd.DataFrame(prompts, columns=["Prompts"])
+    df.to_excel(file_name, index=False)
+    return file_name
+
+def save_prompts_to_pdf(prompts, file_name="prompts.pdf"):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    for prompt in prompts:
+        pdf.multi_cell(0, 10, prompt)
+    pdf.output(file_name)
+    return file_name
 
 def main():
     """Main function for the Streamlit app."""
@@ -177,6 +192,8 @@ def main():
                     genai.configure(api_key=api_key)  # Configure AI model with API key
                     model = genai.GenerativeModel('gemini-pro-vision')
 
+                    all_prompts = []  # To store all generated prompts
+
                     # Create a temporary directory to store the uploaded images
                     with tempfile.TemporaryDirectory() as temp_dir:
                         for uploaded_file in uploaded_files:
@@ -198,12 +215,27 @@ def main():
                                 # Generate description and prompts
                                 description = generate_description(model, img, prompt_template, num_prompts)
                                 prompts = [f"{prompt.strip()} {additional_text}" for prompt in description.split("\n") if prompt.strip()]
+                                all_prompts.extend(prompts)
 
                                 # Display thumbnail and prompts
                                 st.image(img, width=100)
                                 st.markdown("<div class='prompt-title'>Prompts</div>", unsafe_allow_html=True)
                                 for prompt in prompts:
                                     st.markdown(f"{prompt}\n")
+
+                    # Export options
+                    st.markdown("### Export Options")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        if st.button("Export to Excel"):
+                            excel_file = save_prompts_to_excel(all_prompts)
+                            with open(excel_file, "rb") as file:
+                                st.download_button(label="Download Excel", data=file, file_name="prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    with col2:
+                        if st.button("Export to PDF"):
+                            pdf_file = save_prompts_to_pdf(all_prompts)
+                            with open(pdf_file, "rb") as file:
+                                st.download_button(label="Download PDF", data=file, file_name="prompts.pdf", mime="application/pdf")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
