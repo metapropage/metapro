@@ -149,10 +149,6 @@ def main():
     """Main function for the Streamlit app."""
 
     initialize_session_state()
-
-    # Add elements to the sidebar
-    st.sidebar.title("Sidebar Title")
-    st.sidebar.write("Sidebar content goes here")
     
     # Display WhatsApp chat link
     st.markdown("""
