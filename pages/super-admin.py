@@ -4,13 +4,13 @@ import tempfile
 from PIL import Image
 import google.generativeai as genai
 import iptcinfo3
-import zipfile
-import time
 import traceback
 import re
 import unicodedata
 from datetime import datetime, timedelta
 import pytz
+import cairosvg  # For converting SVG to PNG
+from wand.image import Image as WandImage  # For converting EPS to JPEG
 from menu import menu_with_redirect
 
 st.set_option("client.showSidebarNavigation", False)
@@ -52,21 +52,6 @@ def normalize_text(text):
     normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
     return normalized
 
-def zip_processed_images(image_paths):
-    try:
-        zip_file_path = os.path.join(tempfile.gettempdir(), 'processed_images.zip')
-
-        with zipfile.ZipFile(zip_file_path, 'w') as zipf:
-            for image_path in image_paths:
-                zipf.write(image_path, arcname=os.path.basename(image_path))
-
-        return zip_file_path
-
-    except Exception as e:
-        st.error(f"An error occurred while zipping images: {e}")
-        st.error(traceback.format_exc())
-        return None
-
 def generate_description(model, img):
     description = model.generate_content(["create 4 prompts for microstock photostock Adobe Stock. The prompts must be able to produce images exactly like this one.", img])
     return description.text.strip()
@@ -74,6 +59,14 @@ def generate_description(model, img):
 def format_midjourney_prompt(description):
     prompt_text = f"{description} -ar 16:9"
     return prompt_text
+
+def convert_svg_to_png(svg_path, output_path):
+    cairosvg.svg2png(url=svg_path, write_to=output_path)
+
+def convert_eps_to_jpeg(eps_path, output_path):
+    with WandImage(filename=eps_path) as img:
+        img.format = 'jpeg'
+        img.save(filename=output_path)
 
 def main():
     """Main function for the Streamlit app."""
@@ -137,85 +130,64 @@ def main():
         if api_key:
             st.session_state['api_key'] = api_key
 
-        # Upload image files
-        uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
+        # Upload image file
+        uploaded_file = st.file_uploader('Upload an Image (JPG, JPEG, PNG, SVG, EPS supported)', type=['jpg', 'jpeg', 'png', 'svg', 'eps'])
 
-        if uploaded_files:
-            valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
-            invalid_files = [file for file in uploaded_files if file not in valid_files]
+        if uploaded_file and st.button("Process"):
+            with st.spinner("Processing..."):
+                try:
+                    # Check and update upload count for the current date
+                    if st.session_state['upload_count']['date'] != current_date.date():
+                        st.session_state['upload_count'] = {
+                            'date': current_date.date(),
+                            'count': 0
+                        }
 
-            if invalid_files:
-                st.error("Only JPG and JPEG files are supported.")
+                    # Check if remaining uploads are available
+                    if st.session_state['upload_count']['count'] >= 1000:
+                        remaining_uploads = 0
+                        st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
+                        return
+                    else:
+                        st.session_state['upload_count']['count'] += 1
+                        st.success(f"Upload successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
 
-            if valid_files and st.button("Process"):
-                with st.spinner("Processing..."):
-                    try:
-                        # Check and update upload count for the current date
-                        if st.session_state['upload_count']['date'] != current_date.date():
-                            st.session_state['upload_count'] = {
-                                'date': current_date.date(),
-                                'count': 0
-                            }
+                    genai.configure(api_key=api_key)  # Configure AI model with API key
+                    model = genai.GenerativeModel('gemini-pro-vision')
+
+                    # Create a temporary directory to store the uploaded image
+                    with tempfile.TemporaryDirectory() as temp_dir:
+                        # Save the uploaded image to the temporary directory
+                        temp_image_path = os.path.join(temp_dir, uploaded_file.name)
+                        with open(temp_image_path, 'wb') as f:
+                            f.write(uploaded_file.read())
+
+                        # Convert SVG and EPS to JPEG if needed
+                        if uploaded_file.type == 'image/svg+xml':
+                            temp_converted_path = os.path.join(temp_dir, 'converted_image.png')
+                            convert_svg_to_png(temp_image_path, temp_converted_path)
+                            temp_image_path = temp_converted_path
+                        elif uploaded_file.type == 'application/postscript':
+                            temp_converted_path = os.path.join(temp_dir, 'converted_image.jpg')
+                            convert_eps_to_jpeg(temp_image_path, temp_converted_path)
+                            temp_image_path = temp_converted_path
+
+                        # Open the image
+                        img = Image.open(temp_image_path)
+
+                        # Generate description and prompts
+                        description = generate_description(model, img)
+                        prompts = description.split("\n")
                         
-                        # Check if remaining uploads are available
-                        if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
-                            remaining_uploads = 1000 - st.session_state['upload_count']['count']
-                            st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
-                            return
-                        else:
-                            st.session_state['upload_count']['count'] += len(valid_files)
-                            st.success(f"Uploads successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
+                        # Display thumbnails and descriptions
+                        st.image(img, width=100)
+                        for j, prompt in enumerate(prompts):
+                            st.markdown(f"### Prompt {j+1}\n")
+                            st.markdown(f"{prompt.strip()} -ar 16:9\n")
 
-                        genai.configure(api_key=api_key)  # Configure AI model with API key
-                        model = genai.GenerativeModel('gemini-pro-vision')
-
-                        # Create a temporary directory to store the uploaded images
-                        with tempfile.TemporaryDirectory() as temp_dir:
-                            # Save the uploaded images to the temporary directory
-                            image_paths = []
-                            for file in valid_files:
-                                temp_image_path = os.path.join(temp_dir, file.name)
-                                with open(temp_image_path, 'wb') as f:
-                                    f.write(file.read())
-                                image_paths.append(temp_image_path)
-
-                            # Process each image
-                            total_files = len(image_paths)
-                            files_processed = 0
-
-                            # Display the progress bar and current file number
-                            progress_placeholder = st.empty()
-                            progress_bar = progress_placeholder.progress(0)
-                            progress_placeholder.text(f"Processing images 0/{total_files}")
-
-                            processed_image_paths = []
-                            for image_path in image_paths:
-                                try:
-                                    processed_image_paths.append(image_path)
-                                except Exception as e:
-                                    st.error(f"An error occurred while processing {os.path.basename(image_path)}: {e}")
-                                    st.error(traceback.format_exc())
-                                    continue
-
-                            # Zip processed images
-                            zip_file_path = zip_processed_images(processed_image_paths)
-
-                            if zip_file_path:
-                                st.success("Images processed successfully!")
-
-                                # Display thumbnails and descriptions
-                                for i, image_path in enumerate(processed_image_paths):
-                                    img = Image.open(image_path)
-                                    description = generate_description(model, img)
-                                    prompts = description.split("\n")
-                                    for j, prompt in enumerate(prompts):
-                                        st.markdown(f"### Prompt {j+1}\n")
-                                        st.markdown(f"{prompt.strip()} -ar 16:9\n")
-                                        st.image(img, width=100)
-
-                    except Exception as e:
-                        st.error(f"An error occurred: {e}")
-                        st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+                except Exception as e:
+                    st.error(f"An error occurred: {e}")
+                    st.error(traceback.format_exc())  # Print detailed error traceback for debugging
 
 if __name__ == '__main__':
     main()
