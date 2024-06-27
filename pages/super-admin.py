@@ -74,6 +74,8 @@ def convert_svg_to_png(svg_path):
 
 def convert_eps_to_jpeg(eps_path):
     try:
+        from wand.image import Image as WandImage
+
         with WandImage(filename=eps_path) as img:
             img.format = 'jpeg'
             jpeg_path = eps_path.replace('.eps', '.jpg')
@@ -193,6 +195,7 @@ def main():
                             
                             # Display thumbnails and descriptions
                             st.image(img, width=100)
+                            st.markdown("## Prompts\n")
                             for j, prompt in enumerate(prompts):
                                 st.markdown(f"### Prompt {j+1}\n")
                                 st.markdown(f"{prompt.strip()} -ar 16:9\n")
