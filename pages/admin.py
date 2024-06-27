@@ -11,10 +11,6 @@ import re
 import unicodedata
 from datetime import datetime, timedelta
 import pytz
-import json
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
-from googleapiclient.http import MediaFileUpload
 import paramiko
 from menu import menu_with_redirect
 
@@ -43,27 +39,30 @@ JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
 def generate_metadata(model, img):
     title_prompt = st.session_state['title_prompt']
     tags_prompt = st.session_state['tags_prompt']
-
-    caption = model.generate_content([title_prompt, img])
-    time.sleep(1)  # Delay before processing the next part
-    tags = model.generate_content([tags_prompt, img])
-    time.sleep(1)  # Delay before returning the result
-
-    # Extracting keywords and ensuring they are single words
-    keywords = re.findall(r'\w+', tags.text)
     
-    # Converting keywords to lowercase
+    # Generate title
+    title_response = model.generate_content([title_prompt, img])
+    title = title_response.text.strip()
+
+    # Generate tags based on the image and the generated title
+    tags_response = model.generate_content([f"{tags_prompt}. The image contains '{title}'", img])
+    tags = tags_response.text
+    
+    # Extract keywords and ensure they are single words
+    keywords = re.findall(r'\w+', tags)
+    
+    # Convert keywords to lowercase
     keywords = [word.lower() for word in keywords]
     
-    # Limiting keywords to 49 words and removing duplicates
+    # Limit keywords to 49 words and remove duplicates
     unique_keywords = list(set(keywords))[:49]
-
-    # Joining keywords with commas
+    
+    # Join keywords with commas
     trimmed_tags = ','.join(unique_keywords)
-
+    
     return {
-        'Title': caption.text.strip(),  # Strip leading/trailing whitespace from caption
-        'Tags': trimmed_tags  # Use the trimmed tags
+        'Title': title,
+        'Tags': trimmed_tags
     }
 
 # Function to embed metadata into images
