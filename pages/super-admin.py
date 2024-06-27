@@ -68,7 +68,7 @@ def zip_processed_images(image_paths):
         return None
 
 def generate_description(model, img):
-    description = model.generate_content(["create 4 prompts for microstock photostock Adobe Stock. The prompts must be popular and sell well. The prompts must be able to produce images exactly like this one. ending with -ar 16:9 ", img])
+    description = model.generate_content(["create 4 prompts for microstock photostock Adobe Stock. The prompts must be able to produce images exactly like this one.", img])
     return description.text.strip()
 
 def format_midjourney_prompt(description):
