@@ -1,4 +1,3 @@
-
 import streamlit as st
 import os
 import tempfile
@@ -47,7 +46,7 @@ if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
 def generate_prompts(image_paths):
-    ""create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9."""
+    """Create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9."""
     prompts = []
     for image_path in image_paths:
         image_name = os.path.basename(image_path).replace("_", " ").replace(".jpg", "").replace(".jpeg", "")
@@ -58,6 +57,17 @@ def generate_prompts(image_paths):
 def main():
     """Main function for the Streamlit app."""
     
+    # Display WhatsApp chat link
+    st.markdown("""
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="https://wa.me/6285328007533" target="_blank">
+            <button style="background-color: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                MetaPro
+            </button>
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
+
     # Check if license has already been validated
     license_file = "license.txt"
     if not st.session_state['license_validated']:
@@ -156,3 +166,6 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+
+if __name__ == '__main__':
+    main()
