@@ -1,6 +1,4 @@
 import streamlit as st
-import os
-from datetime import datetime, timedelta
 
 # Assuming the menu function is defined in a module named 'menu'
 from menu import menu
@@ -37,41 +35,17 @@ def authenticate(username, password):
     if username == USERNAME and password == PASSWORD:
         st.session_state.authenticated = True
         st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
-        set_lock("logged_in", 30)  # Lock for 30 days
         st.session_state.rerun = True
     else:
         st.error("Incorrect username or password")
 
-# Function to check the lock file
-def check_lock():
-    lock_file = "lock.txt"
-    if os.path.exists(lock_file):
-        with open(lock_file, 'r') as file:
-            lock_data = file.read().split(',')
-            if len(lock_data) == 2:
-                status, lock_date = lock_data
-                lock_date = datetime.strptime(lock_date, "%Y-%m-%d %H:%M:%S")
-                if datetime.now() < lock_date + timedelta(days=30):
-                    return status == "logged_in"
-    return False
-
-# Function to set lock file
-def set_lock(status, lock_duration_days):
-    lock_file = "lock.txt"
-    lock_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    with open(lock_file, 'w') as file:
-        file.write(f"{status},{lock_date}")
-
 # If the user is not authenticated, show the login form
 if not st.session_state.authenticated:
     st.title("Login")
-    if check_lock():
-        st.error("Another user is currently logged in. Please try again later.")
-    else:
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        if st.button("Login"):
-            authenticate(username, password)
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        authenticate(username, password)
 
 # If authenticated, show the menu and additional information
 if st.session_state.authenticated:
@@ -85,7 +59,6 @@ if st.session_state.authenticated:
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.role = None
-        set_lock("", 0)  # Clear lock
         st.success("Logged out successfully.")
 
     # Additional Information
