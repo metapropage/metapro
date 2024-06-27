@@ -9,7 +9,7 @@ def authenticated_menu():
         st.sidebar.page_link("pages/admin.py", label="Upload via SFTP")
         st.sidebar.page_link(
             "pages/super-admin.py",
-            label="Describe Midjourney Prompts",
+            label="Magic Prompts",
             disabled=st.session_state.role != "super-admin",
         )
 
