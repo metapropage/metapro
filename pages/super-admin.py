@@ -2,13 +2,11 @@ import streamlit as st
 import os
 import tempfile
 from PIL import Image
-import google.generativeai as genai  # Ensure this is the correct module
+import google.generativeai as genai
 import traceback
-import re
-import unicodedata
-from datetime import datetime, timedelta
 import pytz
-import json
+from datetime import datetime, timedelta
+from google.oauth2 import service_account
 from menu import menu_with_redirect
 
 st.set_option("client.showSidebarNavigation", False)
@@ -44,23 +42,19 @@ if 'upload_count' not in st.session_state:
 
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
-    
-# Function to generate detailed description for images using AI model
-def generate_description(model, img):
-    # Example to start with: taking description from image metadata or simple text
-    return f"A beautiful landscape with mountains and a clear blue sky."
 
-# Function to format MidJourney prompt
+# Function to generate detailed descriptions for images using AI model
+def generate_description(model, img):
+    description = model.generate_content(["I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9. ", img])
+    return description.text.strip()
+
+# Function to format MidJourney prompts
 def format_midjourney_prompt(description):
-    prompt_texts = [f"I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9"] * 10
-    return prompt_texts
+    prompt_text = f"{description} -ar 16:9"
+    return prompt_text
 
 def main():
     """Main function for the Streamlit app."""
-
-    # Add elements to the sidebar
-    st.sidebar.title("Sidebar Title")
-    st.sidebar.write("Sidebar content goes here")
 
     # Display WhatsApp chat link
     st.markdown("""
@@ -163,20 +157,27 @@ def main():
                                     f.write(file.read())
                                 image_paths.append(temp_image_path)
 
-                            # Generate and display MidJourney prompt texts and thumbnails
-                            st.markdown("## Generated MidJourney Prompts")
-                            for image_path in image_paths:
+                            # Generate descriptions and format MidJourney prompts for each image
+                            process_placeholder = st.empty()
+                            prompts_list = []
+                            for i, image_path in enumerate(image_paths):
+                                process_placeholder.text(f"Generating descriptions and prompts for image {i + 1}/{len(image_paths)}")
+                                try:
+                                    img = Image.open(image_path)
+                                    description = generate_description(model, img)
+                                    prompt = format_midjourney_prompt(description)
+                                    prompts_list.append(prompt)
+                                except Exception as e:
+                                    st.error(f"An error occurred while generating prompts for {os.path.basename(image_path)}: {e}")
+                                    st.error(traceback.format_exc())
+                                    continue
+
+                            # Display the thumbnails and generated prompts
+                            st.subheader("Generated Prompts")
+                            for image_path, prompt in zip(image_paths, prompts_list):
                                 img = Image.open(image_path)
-                                description = generate_description(model, img)
-                                midjourney_prompts = format_midjourney_prompt(description)
-
-                                # Display thumbnail
-                                img.thumbnail((150, 150))
-                                st.image(img)
-
-                                # Display prompt texts
-                                for prompt in midjourney_prompts:
-                                    st.markdown(f"**MidJourney Prompt:** {prompt}")
+                                st.image(img, width=150)
+                                st.code(prompt, language="text")
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
