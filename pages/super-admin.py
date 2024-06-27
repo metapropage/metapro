@@ -27,6 +27,10 @@ st.markdown("""
             top: 0;
             height: 10vh;
         }
+        .prompt-title {
+            font-size: 14px;
+            font-weight: bold;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -142,6 +146,9 @@ def main():
         # Number of prompts to generate
         num_prompts = st.number_input('Enter the number of prompts to generate', min_value=1, max_value=10, value=4)
 
+        # Additional text for prompts
+        additional_text = st.text_input('Additional text for prompts', value='--ar 16:9')
+
         # Upload image files
         uploaded_files = st.file_uploader('Upload Images (JPG, JPEG, PNG, SVG, EPS supported)', type=['jpg', 'jpeg', 'png', 'svg', 'eps'], accept_multiple_files=True, key="file_uploader")
 
@@ -188,11 +195,14 @@ def main():
                                 # Generate description and prompts
                                 description = generate_description(model, img, num_prompts)
                                 prompts = description.split("\n")
+                                
+                                # Add additional text to prompts
+                                prompts_with_text = [f"{prompt.strip()} {additional_text}" for prompt in prompts]
 
                                 # Display thumbnail and prompts
                                 st.image(img, width=100)
-                                st.markdown("## Prompts\n")
-                                for prompt in prompts:
+                                st.markdown("<div class='prompt-title'>Prompts</div>", unsafe_allow_html=True)
+                                for prompt in prompts_with_text:
                                     if prompt.strip():  # Only display non-empty prompts
                                         st.markdown(f"{prompt.strip()}\n")
 
