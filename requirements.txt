@@ -20,3 +20,5 @@ uuid
 svglib
 reportlab
 Wand
+pandas
+FPDF
