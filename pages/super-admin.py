@@ -1,16 +1,12 @@
 import streamlit as st
 import os
 import tempfile
-from PIL import Image, ImageOps
+from PIL import Image
 import google.generativeai as genai
-import iptcinfo3
 import traceback
-import re
-import unicodedata
 from datetime import datetime, timedelta
 import pytz
 from menu import menu_with_redirect
-from io import BytesIO
 import pandas as pd
 from fpdf import FPDF
 
@@ -227,17 +223,15 @@ def main():
                     st.markdown("### Export Options")
                     col1, col2 = st.columns(2)
                     with col1:
-                        if st.button("Export to Excel"):
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-                                excel_file = save_prompts_to_excel(all_prompts, tmp.name)
-                                with open(excel_file, "rb") as file:
-                                    st.download_button(label="Download Excel", data=file, file_name="prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                            excel_file = save_prompts_to_excel(all_prompts, tmp.name)
+                        with open(excel_file, "rb") as file:
+                            st.download_button(label="Download Excel", data=file, file_name="prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     with col2:
-                        if st.button("Export to PDF"):
-                            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-                                pdf_file = save_prompts_to_pdf(all_prompts, tmp.name)
-                                with open(pdf_file, "rb") as file:
-                                    st.download_button(label="Download PDF", data=file, file_name="prompts.pdf", mime="application/pdf")
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                            pdf_file = save_prompts_to_pdf(all_prompts, tmp.name)
+                        with open(pdf_file, "rb") as file:
+                            st.download_button(label="Download PDF", data=file, file_name="prompts.pdf", mime="application/pdf")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
