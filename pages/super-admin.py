@@ -4,11 +4,7 @@ import tempfile
 from PIL import Image
 import google.generativeai as genai  # Ensure this is the correct module
 import traceback
-import re
-import unicodedata
-from datetime import datetime, timedelta
-import pytz
-import json
+from datetime import datetime
 from menu import menu_with_redirect
 
 st.set_option("client.showSidebarNavigation", False)
@@ -114,11 +110,21 @@ def main():
                                 f.write(file.read())
                             image_paths.append(temp_image_path)
                         
-                        # Generate metadata for each image
+                        # Generate metadata for each image and display it with a thumbnail
                         for img_path in image_paths:
                             caption, tags = generate_metadata(model, img_path)
-                            st.write(f"Title: {caption}")
-                            st.write(f"Keywords: {tags}")
+                            
+                            # Open image and create thumbnail
+                            img = Image.open(img_path)
+                            img.thumbnail((150, 150))
+                            
+                            # Display the thumbnail, title, and keywords
+                            col1, col2 = st.columns([1, 4])
+                            with col1:
+                                st.image(img)
+                            with col2:
+                                st.write(f"**Title:** {caption}")
+                                st.write(f"**Keywords:** {tags}")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
