@@ -120,7 +120,7 @@ def zip_processed_images(image_paths):
         return None
 
 def generate_description(model, img):
-    description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
+    description = model.generate_content(["create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9 ", img])
     return description.text.strip()
 
 def format_midjourney_prompt(description):
