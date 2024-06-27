@@ -144,7 +144,7 @@ def main():
             st.session_state['api_key'] = api_key
 
         # Prompt template input
-        prompt_template = st.text_input('Prompt template', value='Create prompts for microstock photostock. The prompts must be able to produce images exactly like this one. Generate')
+        prompt_template = st.text_input('Prompt template', value='Create prompts for microstock photostock. The prompts must be able to produce images exactly like this one.')
 
         # Number of prompts to generate
         num_prompts = st.number_input('Enter the number of prompts to generate', min_value=1, max_value=10, value=4)
