@@ -82,19 +82,19 @@ def convert_eps_to_jpeg(eps_path):
         st.error(f"Failed to convert EPS to JPEG: {e}")
         return None
 
-def save_prompts_to_excel(prompts, file_name="prompts.xlsx"):
+def save_prompts_to_excel(prompts, file_path):
     df = pd.DataFrame(prompts, columns=["Prompts"])
-    df.to_excel(file_name, index=False)
-    return file_name
+    df.to_excel(file_path, index=False)
+    return file_path
 
-def save_prompts_to_pdf(prompts, file_name="prompts.pdf"):
+def save_prompts_to_pdf(prompts, file_path):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
     for prompt in prompts:
         pdf.multi_cell(0, 10, prompt)
-    pdf.output(file_name)
-    return file_name
+    pdf.output(file_path)
+    return file_path
 
 def main():
     """Main function for the Streamlit app."""
@@ -228,14 +228,16 @@ def main():
                     col1, col2 = st.columns(2)
                     with col1:
                         if st.button("Export to Excel"):
-                            excel_file = save_prompts_to_excel(all_prompts)
-                            with open(excel_file, "rb") as file:
-                                st.download_button(label="Download Excel", data=file, file_name="prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                                excel_file = save_prompts_to_excel(all_prompts, tmp.name)
+                                with open(excel_file, "rb") as file:
+                                    st.download_button(label="Download Excel", data=file, file_name="prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
                     with col2:
                         if st.button("Export to PDF"):
-                            pdf_file = save_prompts_to_pdf(all_prompts)
-                            with open(pdf_file, "rb") as file:
-                                st.download_button(label="Download PDF", data=file, file_name="prompts.pdf", mime="application/pdf")
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                                pdf_file = save_prompts_to_pdf(all_prompts, tmp.name)
+                                with open(pdf_file, "rb") as file:
+                                    st.download_button(label="Download PDF", data=file, file_name="prompts.pdf", mime="application/pdf")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
