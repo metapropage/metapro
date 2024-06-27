@@ -2,10 +2,13 @@ import streamlit as st
 import os
 import tempfile
 from PIL import Image
-import google.generativeai as genai
+import google.generativeai as genai  # Ensure this is the correct module
 import traceback
-import pytz
+import re
+import unicodedata
 from datetime import datetime, timedelta
+import pytz
+import json
 from menu import menu_with_redirect
 
 st.set_option("client.showSidebarNavigation", False)
@@ -42,84 +45,147 @@ if 'upload_count' not in st.session_state:
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
-# Sidebar for API key input
-with st.sidebar:
-    st.header("API Key")
+# Function to normalize and clean text
+def normalize_text(text):
+    normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+    return normalized
 
-    # API Key input
-    api_key = st.text_input('Enter your API Key', value=st.session_state['api_key'] or '')
+# Function to generate detailed description for images using AI model
+def generate_description(model, img):
+    # Example to start with: taking description from image metadata or simple text
+    return f"A beautiful landscape with mountains and a clear blue sky."
 
-    # Save API key in session state
-    if api_key:
-        st.session_state['api_key'] = api_key
+# Function to format MidJourney prompt
+def format_midjourney_prompt(description):
+    prompt_texts = [f"I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9"] * 10
+    return prompt_texts
 
-    # Validate the API key
-    if st.button("Validate"):
-        try:
-            genai.init(api_key=api_key)
+def main():
+    """Main function for the Streamlit app."""
+
+    # Add elements to the sidebar
+    st.sidebar.title("Sidebar Title")
+    st.sidebar.write("Sidebar content goes here")
+
+    # Display WhatsApp chat link
+    st.markdown("""
+    <div style="text-align: center; margin-top: 20px;">
+        <a href="https://wa.me/6285328007533" target="_blank">
+            <button style="background-color: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                MetaPro
+            </button>
+        </a>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # Check if license has already been validated
+    license_file = "license.txt"
+    if not st.session_state['license_validated']:
+        if os.path.exists(license_file):
+            with open(license_file, 'r') as file:
+                start_date_str = file.read().strip()
+                start_date = datetime.fromisoformat(start_date_str)
+                st.session_state['license_validated'] = True
+        else:
+            # License key input
+            validation_key = st.text_input('License Key', type='password')
+
+    # Check if validation key is correct
+    correct_key = "dian12345"
+
+    if not st.session_state['license_validated'] and validation_key:
+        if validation_key == correct_key:
+            st.session_state['license_validated'] = True
+            start_date = datetime.now(JAKARTA_TZ)
+            with open(license_file, 'w') as file:
+                file.write(start_date.isoformat())
+        else:
+            st.error("Invalid validation key. Please enter the correct key.")
+
+    if st.session_state['license_validated']:
+        # Check the license file for the start date
+        with open(license_file, 'r') as file:
+            start_date_str = file.read().strip()
+            start_date = datetime.fromisoformat(start_date_str)
+
+        # Calculate the expiration date
+        expiration_date = start_date + timedelta(days=31)
+        current_date = datetime.now(JAKARTA_TZ)
+
+        if current_date > expiration_date:
+            st.error("Your license has expired. Please contact support for a new license key.")
+            return
+        else:
+            days_remaining = (expiration_date - current_date).days
+            st.success(f"License valid. You have {days_remaining} days remaining.")
+
+        # API Key input
+        api_key = st.text_input('Enter your API Key')
+
+        # Save API key in session state
+        if api_key:
             st.session_state['api_key'] = api_key
-            st.success("API key validated successfully!")
-        except Exception as e:
-            st.error("Invalid API key. Please try again.")
-            st.session_state['api_key'] = None
 
-# Main content
-st.title("Image Upload and Prompt Generation")
+        # Upload image files
+        uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
 
-if st.session_state['api_key']:
-    # Upload image files
-    uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
+        if uploaded_files:
+            valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
+            invalid_files = [file for file in uploaded_files if file not in valid_files]
 
-    if uploaded_files:
-        valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
-        invalid_files = [file for file in uploaded_files if file not in valid_files]
+            if invalid_files:
+                st.error("Only JPG and JPEG files are supported.")
 
-        if invalid_files:
-            st.error("Only JPG and JPEG files are supported.")
+            if valid_files and st.button("Process"):
+                with st.spinner("Processing..."):
+                    try:
+                        # Check and update upload count for the current date
+                        if st.session_state['upload_count']['date'] != current_date.date():
+                            st.session_state['upload_count'] = {
+                                'date': current_date.date(),
+                                'count': 0
+                            }
+                        
+                        # Check if remaining uploads are available
+                        if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
+                            remaining_uploads = 1000 - st.session_state['upload_count']['count']
+                            st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
+                            return
+                        else:
+                            st.session_state['upload_count']['count'] += len(valid_files)
+                            st.success(f"Uploads successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
 
-        if valid_files and st.button("Process"):
-            with st.spinner("Processing..."):
-                try:
-                    # Get the current date
-                    current_date = datetime.now(JAKARTA_TZ)
+                        genai.configure(api_key=api_key)  # Configure AI model with API key
+                        model = genai.GenerativeModel('gemini-pro-vision')
 
-                    # Check and update upload count for the current date
-                    if st.session_state['upload_count']['date'] != current_date.date():
-                        st.session_state['upload_count'] = {
-                            'date': current_date.date(),
-                            'count': 0
-                        }
+                        # Create a temporary directory to store the uploaded images
+                        with tempfile.TemporaryDirectory() as temp_dir:
+                            # Save the uploaded images to the temporary directory
+                            image_paths = []
+                            for file in valid_files:
+                                temp_image_path = os.path.join(temp_dir, file.name)
+                                with open(temp_image_path, 'wb') as f:
+                                    f.write(file.read())
+                                image_paths.append(temp_image_path)
 
-                    # Process each valid file
-                    for uploaded_file in valid_files:
-                        # Save the uploaded file to a temporary directory
-                        with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
-                            tmp_file.write(uploaded_file.read())
-                            tmp_file_path = tmp_file.name
+                            # Generate and display MidJourney prompt texts and thumbnails
+                            st.markdown("## Generated MidJourney Prompts")
+                            for image_path in image_paths:
+                                img = Image.open(image_path)
+                                description = generate_description(model, img)
+                                midjourney_prompts = format_midjourney_prompt(description)
 
-                        # Open the image file
-                        image = Image.open(tmp_file_path)
-                        st.image(image, caption='Uploaded Image', use_column_width=True)
+                                # Display thumbnail
+                                img.thumbnail((150, 150))
+                                st.image(img)
 
-                        # Generate text-to-image prompts using Generative AI
-                        prompts = genai.generate_prompts(
-                            description="I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts.",
-                            image=image
-                        )
+                                # Display prompt texts
+                                for prompt in midjourney_prompts:
+                                    st.markdown(f"**MidJourney Prompt:** {prompt}")
 
-                        st.write("Generated Prompts:")
-                        for i, prompt in enumerate(prompts, start=1):
-                            st.write(f"{i}. {prompt}")
+                    except Exception as e:
+                        st.error(f"An error occurred: {e}")
+                        st.error(traceback.format_exc())  # Print detailed error traceback for debugging
 
-                        # Clean up the temporary file
-                        if os.path.exists(tmp_file_path):
-                            os.remove(tmp_file_path)
-
-                    # Update the upload count
-                    st.session_state['upload_count']['count'] += len(valid_files)
-
-                except Exception as e:
-                    st.error("An error occurred while processing the image.")
-                    st.error(traceback.format_exc())
-else:
-    st.warning("Please enter and validate your API key to use the app.")
+if __name__ == '__main__':
+    main()
