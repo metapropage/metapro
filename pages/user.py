@@ -156,10 +156,6 @@ def format_midjourney_prompt(description):
 def main():
     """Main function for the Streamlit app."""
 
-    # Add elements to the sidebar
-    st.sidebar.title("Sidebar Title")
-    st.sidebar.write("Sidebar content goes here")
-
     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
@@ -307,20 +303,6 @@ def main():
                                 if drive_link:
                                     st.success("File uploaded to Google Drive successfully!")
                                     st.markdown(f"[Download processed images from Google Drive]({drive_link})")
-
-                            # Generate and display MidJourney prompt texts and thumbnails
-                            st.markdown("## Generated MidJourney Prompts")
-                            for image_path in processed_image_paths:
-                                img = Image.open(image_path)
-                                description = generate_description(model, img)
-                                midjourney_prompt = format_midjourney_prompt(description)
-
-                                # Display thumbnail
-                                img.thumbnail((150, 150))
-                                st.image(img)
-
-                                # Display prompt text
-                                st.markdown(f"**MidJourney Prompt:** {midjourney_prompt}")
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
