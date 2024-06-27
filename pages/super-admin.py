@@ -6,7 +6,6 @@ import google.generativeai as genai
 import traceback
 import pytz
 from datetime import datetime, timedelta
-from google.oauth2 import service_account
 from menu import menu_with_redirect
 
 st.set_option("client.showSidebarNavigation", False)
@@ -43,146 +42,56 @@ if 'upload_count' not in st.session_state:
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
-# Function to generate detailed descriptions for images using AI model
-def generate_description(model, img):
-    prompt = "I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9."
-    description = model.generate_content([prompt, img])
-    return description.text.strip()
+# Function to validate the API key and set up the Generative AI client
+def validate_api_key(api_key):
+    try:
+        genai.init(api_key=api_key)
+        st.session_state['api_key'] = api_key
+        st.success("API key validated successfully!")
+    except Exception as e:
+        st.error("Invalid API key. Please try again.")
+        st.session_state['api_key'] = None
 
-# Function to format MidJourney prompts
-def format_midjourney_prompt(description):
-    prompt_text = f"{description} -ar 16:9"
-    return prompt_text
+# Sidebar for API key input
+with st.sidebar:
+    st.header("API Key")
+    api_key = st.text_input("Enter your Google Generative AI API key", type="password")
+    if st.button("Validate"):
+        validate_api_key(api_key)
 
-def main():
-    """Main function for the Streamlit app."""
+# Main content
+st.title("Image Upload and Prompt Generation")
 
-    # Display WhatsApp chat link
-    st.markdown("""
-    <div style="text-align: center; margin-top: 20px;">
-        <a href="https://wa.me/6285328007533" target="_blank">
-            <button style="background-color: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                MetaPro
-            </button>
-        </a>
-    </div>
-    """, unsafe_allow_html=True)
+if st.session_state['api_key']:
+    uploaded_file = st.file_uploader("Choose an image file (jpg, jpeg, png)", type=["jpg", "jpeg", "png"])
+    
+    if uploaded_file is not None:
+        try:
+            # Save the uploaded file to a temporary directory
+            with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
+                tmp_file.write(uploaded_file.read())
+                tmp_file_path = tmp_file.name
+            
+            # Open the image file
+            image = Image.open(tmp_file_path)
+            st.image(image, caption='Uploaded Image', use_column_width=True)
 
-    # Check if license has already been validated
-    license_file = "license.txt"
-    if not st.session_state['license_validated']:
-        if os.path.exists(license_file):
-            with open(license_file, 'r') as file:
-                start_date_str = file.read().strip()
-                start_date = datetime.fromisoformat(start_date_str)
-                st.session_state['license_validated'] = True
-        else:
-            # License key input
-            validation_key = st.text_input('License Key', type='password')
+            # Generate text-to-image prompts using Generative AI
+            prompts = genai.generate_prompts(
+                description="I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts.",
+                image=image
+            )
+            
+            st.write("Generated Prompts:")
+            for i, prompt in enumerate(prompts, start=1):
+                st.write(f"{i}. {prompt}")
 
-    # Check if validation key is correct
-    correct_key = "dian12345"
-
-    if not st.session_state['license_validated'] and validation_key:
-        if validation_key == correct_key:
-            st.session_state['license_validated'] = True
-            start_date = datetime.now(JAKARTA_TZ)
-            with open(license_file, 'w') as file:
-                file.write(start_date.isoformat())
-        else:
-            st.error("Invalid validation key. Please enter the correct key.")
-
-    if st.session_state['license_validated']:
-        # Check the license file for the start date
-        with open(license_file, 'r') as file:
-            start_date_str = file.read().strip()
-            start_date = datetime.fromisoformat(start_date_str)
-
-        # Calculate the expiration date
-        expiration_date = start_date + timedelta(days=31)
-        current_date = datetime.now(JAKARTA_TZ)
-
-        if current_date > expiration_date:
-            st.error("Your license has expired. Please contact support for a new license key.")
-            return
-        else:
-            days_remaining = (expiration_date - current_date).days
-            st.success(f"License valid. You have {days_remaining} days remaining.")
-
-        # API Key input
-        api_key = st.text_input('Enter your API Key', value=st.session_state['api_key'] or '')
-
-        # Save API key in session state
-        if api_key:
-            st.session_state['api_key'] = api_key
-
-        # Upload image files
-        uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
-
-        if uploaded_files:
-            valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
-            invalid_files = [file for file in uploaded_files if file not in valid_files]
-
-            if invalid_files:
-                st.error("Only JPG and JPEG files are supported.")
-
-            if valid_files and st.button("Process"):
-                with st.spinner("Processing..."):
-                    try:
-                        # Check and update upload count for the current date
-                        if st.session_state['upload_count']['date'] != current_date.date():
-                            st.session_state['upload_count'] = {
-                                'date': current_date.date(),
-                                'count': 0
-                            }
-                        
-                        # Check if remaining uploads are available
-                        if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
-                            remaining_uploads = 1000 - st.session_state['upload_count']['count']
-                            st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
-                            return
-                        else:
-                            st.session_state['upload_count']['count'] += len(valid_files)
-                            st.success(f"Uploads successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
-
-                        genai.configure(api_key=api_key)  # Configure AI model with API key
-                        model = genai.GenerativeModel('gemini-pro-vision')
-
-                        # Create a temporary directory to store the uploaded images
-                        with tempfile.TemporaryDirectory() as temp_dir:
-                            # Save the uploaded images to the temporary directory
-                            image_paths = []
-                            for file in valid_files:
-                                temp_image_path = os.path.join(temp_dir, file.name)
-                                with open(temp_image_path, 'wb') as f:
-                                    f.write(file.read())
-                                image_paths.append(temp_image_path)
-
-                            # Generate descriptions and format MidJourney prompts for each image
-                            process_placeholder = st.empty()
-                            prompts_list = []
-                            for i, image_path in enumerate(image_paths):
-                                process_placeholder.text(f"Generating descriptions and prompts for image {i + 1}/{len(image_paths)}")
-                                try:
-                                    img = Image.open(image_path)
-                                    description = generate_description(model, img)
-                                    prompt = format_midjourney_prompt(description)
-                                    prompts_list.append(prompt)
-                                except Exception as e:
-                                    st.error(f"An error occurred while generating prompts for {os.path.basename(image_path)}: {e}")
-                                    st.error(traceback.format_exc())
-                                    continue
-
-                            # Display the thumbnails and generated prompts
-                            st.subheader("Generated Prompts")
-                            for image_path, prompt in zip(image_paths, prompts_list):
-                                img = Image.open(image_path)
-                                st.image(img, width=150)
-                                st.code(prompt, language="text")
-
-                    except Exception as e:
-                        st.error(f"An error occurred: {e}")
-                        st.error(traceback.format_exc())  # Print detailed error traceback for debugging
-
-if __name__ == '__main__':
-    main()
+        except Exception as e:
+            st.error("An error occurred while processing the image.")
+            st.error(traceback.format_exc())
+        finally:
+            # Clean up the temporary file
+            if os.path.exists(tmp_file_path):
+                os.remove(tmp_file_path)
+else:
+    st.warning("Please enter and validate your API key to use the app.")
