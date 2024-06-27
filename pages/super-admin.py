@@ -197,8 +197,9 @@ def main():
                                 st.image(img, width=100)
                                 st.markdown("## Prompts\n")
                                 for j, prompt in enumerate(prompts):
-                                    st.markdown(f"### Prompt {j+1}\n")
-                                    st.markdown(f"{prompt.strip()}\n")
+                                    if prompt.strip():  # Only display non-empty prompts
+                                        st.markdown(f"### Prompt {j+1}\n")
+                                        st.markdown(f"{prompt.strip()}\n")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
