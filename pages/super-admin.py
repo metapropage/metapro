@@ -280,22 +280,6 @@ def main():
                             progress_bar = progress_placeholder.progress(0)
                             progress_placeholder.text(f"Processing images 0/{total_files}")
 
-                            processed_image_paths = []
-                            for i, (image_path, metadata) in enumerate(zip(image_paths, metadata_list)):
-                                process_placeholder.text(f"Embedding metadata for image {i + 1}/{len(image_paths)}")
-                                updated_image_path = embed_metadata(image_path, metadata, progress_bar, files_processed, total_files)
-                                if updated_image_path:
-                                    processed_image_paths.append(updated_image_path)
-                                    files_processed += 1
-                                    # Update progress bar and current file number
-                                    progress_bar.progress(files_processed / total_files)
-
-                            # Zip processed images
-                            zip_file_path = zip_processed_images(processed_image_paths)
-
-                            if zip_file_path:
-                                st.success(f"Successfully zipped processed {zip_file_path}")
-
                                     # Display thumbnails and descriptions
                                     for image_path in processed_image_paths:
                                         img = Image.open(image_path)
