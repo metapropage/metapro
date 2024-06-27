@@ -53,11 +53,11 @@ def normalize_text(text):
 # Function to generate detailed description for images using AI model
 def generate_description(model, img):
     # Example to start with: taking description from image metadata or simple text
-    return f"A beautiful landscape with mountains and a clear blue sky."
+    return f"A photorealistic image of a sleek silver laptop computer with a black keyboard, a black cellphone, and a pair of stylish eyeglasses with black frames, all resting on a natural wood table with a warm finish."
 
 # Function to format MidJourney prompt
 def format_midjourney_prompt(description):
-    prompt_texts = [f"I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9"] * 10
+    prompt_texts = [f"{description} - ar 16:9"] * 10
     return prompt_texts
 
 def main():
