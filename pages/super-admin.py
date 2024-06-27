@@ -52,7 +52,7 @@ def normalize_text(text):
     return normalized
 
 def generate_description(model, img, num_prompts):
-    description = model.generate_content([f"create {num_prompts} prompts for microstock photostock Adobe Stock. The prompts must be able to produce images exactly like this one.", img])
+    description = model.generate_content([f"create {num_prompts} prompts for microstock photostock Adobe Stock. The prompts must be able to produce images exactly like this one, include subject, style, and context.", img])
     return description.text.strip()
 
 def format_midjourney_prompt(description):
