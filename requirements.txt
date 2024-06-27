@@ -23,3 +23,4 @@ Wand
 pandas
 FPDF
 openpyxl
+cairosvg
