@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+from datetime import datetime, timedelta
 
 # Assuming the menu function is defined in a module named 'menu'
 from menu import menu
@@ -36,7 +37,7 @@ def authenticate(username, password):
     if username == USERNAME and password == PASSWORD:
         st.session_state.authenticated = True
         st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
-        set_lock("logged_in")
+        set_lock("logged_in", 30)  # Lock for 30 days
         st.session_state.rerun = True
     else:
         st.error("Incorrect username or password")
@@ -46,15 +47,20 @@ def check_lock():
     lock_file = "lock.txt"
     if os.path.exists(lock_file):
         with open(lock_file, 'r') as file:
-            status = file.read()
-        return status == "logged_in"
+            lock_data = file.read().split(',')
+            if len(lock_data) == 2:
+                status, lock_date = lock_data
+                lock_date = datetime.strptime(lock_date, "%Y-%m-%d %H:%M:%S")
+                if datetime.now() < lock_date + timedelta(days=30):
+                    return status == "logged_in"
     return False
 
 # Function to set lock file
-def set_lock(status):
+def set_lock(status, lock_duration_days):
     lock_file = "lock.txt"
+    lock_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     with open(lock_file, 'w') as file:
-        file.write(status)
+        file.write(f"{status},{lock_date}")
 
 # If the user is not authenticated, show the login form
 if not st.session_state.authenticated:
@@ -71,7 +77,7 @@ if not st.session_state.authenticated:
 if st.session_state.authenticated:
     if st.session_state.rerun:
         st.session_state.rerun = False
-        st.rerun()
+        st.experimental_rerun()
 
     menu()  # Render the dynamic menu
 
@@ -79,7 +85,7 @@ if st.session_state.authenticated:
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.role = None
-        set_lock("")
+        set_lock("", 0)  # Clear lock
         st.success("Logged out successfully.")
 
     # Additional Information
