@@ -45,7 +45,8 @@ if 'api_key' not in st.session_state:
 
 # Function to generate detailed descriptions for images using AI model
 def generate_description(model, img):
-    description = model.generate_content(["I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9. ", img])
+    prompt = "I want to create text-to-image prompts using MidJourney. The prompts must be able to produce images exactly like this one. Please create 10 such prompts ending with -ar 16:9."
+    description = model.generate_content([prompt, img])
     return description.text.strip()
 
 # Function to format MidJourney prompts
