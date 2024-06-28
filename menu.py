@@ -1,3 +1,5 @@
+import streamlit as st
+
 
 def authenticated_menu():
     # Show a navigation menu for authenticated users
@@ -28,16 +30,9 @@ def menu():
 
 
 def menu_with_redirect():
-    # Redirect users to the main page if not logged in, otherwise continue to render the navigation menu
-    if "role" not in st.session_state or st.session_state.role is None:
-        st.experimental_rerun()
-        st.sidebar.markdown('[Join our Telegram group](https://t.me/+hzLj9ZafjQdkYjBl)')
-    menu()
-
-
-def menu_with_redirect():
     # Redirect users to the main page if not logged in, otherwise continue to
     # render the navigation menu
     if "role" not in st.session_state or st.session_state.role is None:
         st.switch_page("app.py")
     menu()
+
