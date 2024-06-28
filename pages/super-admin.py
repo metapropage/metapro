@@ -122,7 +122,7 @@ def main():
         prompt_template = 'Create prompts for microstock, The prompts must be able to produce images exactly like this one.'
 
         # Number of prompts to generate
-        num_prompts = st.number_input('Enter the number of prompts to generate', min_value=1, max_value=10, value=4)
+        num_prompts = st.number_input('Enter the number of prompts to generate', min_value=1, max_value=10, value=1)
 
         # Additional text for prompts
         additional_text = st.text_input('Additional text for prompts', value='--ar 16:9')
