@@ -15,7 +15,15 @@ import json
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-from menu import menu_with_redirect
+
+# Debugging import
+print("Attempting to import menu_with_redirect from menu")
+try:
+    from .menu import menu_with_redirect  # Ensure the correct relative import
+    print("Successfully imported menu_with_redirect")
+except ImportError as e:
+    print(f"Failed to import menu_with_redirect: {e}")
+    raise
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -50,9 +58,6 @@ if 'upload_count' not in st.session_state:
 
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
-
-if 'drive_file_id' not in st.session_state:
-    st.session_state['drive_file_id'] = None
 
 # Function to normalize and clean text
 def normalize_text(text):
@@ -152,7 +157,7 @@ def delete_file_from_drive(file_id, credentials):
     try:
         service = build('drive', 'v3', credentials=credentials)
         service.files().delete(fileId=file_id).execute()
-        st.success("File deleted from Google Drive successfully!")
+        st.success("File successfully deleted from Google Drive.")
     except Exception as e:
         st.error(f"An error occurred while deleting the file from Google Drive: {e}")
         st.error(traceback.format_exc())
@@ -310,23 +315,19 @@ def main():
 
                                 # Upload zip file to Google Drive and get the shareable link
                                 credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=['https://www.googleapis.com/auth/drive.file'])
-                                drive_file_id, drive_link = upload_to_drive(zip_file_path, credentials)
+                                file_id, drive_link = upload_to_drive(zip_file_path, credentials)
 
                                 if drive_link:
-                                    st.session_state['drive_file_id'] = drive_file_id
                                     st.success("File uploaded to Google Drive successfully!")
                                     st.markdown(f"[Download processed images from Google Drive]({drive_link})")
+
+                                    # Button to delete the uploaded file
+                                    if st.button("Delete uploaded file"):
+                                        delete_file_from_drive(file_id, credentials)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
-
-        # If the Google Drive link is displayed, show the delete button
-        if st.session_state['drive_file_id']:
-            if st.button("Delete"):
-                credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=['https://www.googleapis.com/auth/drive.file'])
-                delete_file_from_drive(st.session_state['drive_file_id'], credentials)
-                st.session_state['drive_file_id'] = None
 
 if __name__ == '__main__':
     main()
