@@ -3,22 +3,21 @@ import streamlit as st
 def authenticated_menu():
     # Show a navigation menu for authenticated users
     st.sidebar.title("Navigation Menu")
-    if st.sidebar.button("Home", key="home_button_auth"):
-        st.experimental_set_query_params(page="app.py")
-    if st.sidebar.button("Upload via Gdrive", key="gdrive_button_auth"):
-        st.experimental_set_query_params(page="pages/user.py")
+    st.sidebar.page_link("app.py", label="Home", icon="🏠")
+    st.sidebar.page_link("pages/user.py", label="Upload via Gdrive", icon="🌐")
     if st.session_state.role in ["admin", "super-admin"]:
-        if st.sidebar.button("Upload via SFTP", key="sftp_button_auth"):
-            st.experimental_set_query_params(page="pages/admin.py")
-        if st.session_state.role == "super-admin":
-            if st.sidebar.button("Magic Prompts", key="magic_prompts_button_auth"):
-                st.experimental_set_query_params(page="pages/super-admin.py")
+        st.sidebar.page_link("pages/admin.py", label="Upload via SFTP", icon="🚀")
+        st.sidebar.page_link(
+            "pages/super-admin.py",
+            label="Magic Prompts",
+            disabled=st.session_state.role != "super-admin",
+            icon="✨"
+        )
 
 def unauthenticated_menu():
     # Show a navigation menu for unauthenticated users
     st.sidebar.title("Navigation Menu")
-    if st.sidebar.button("Log in", key="login_button_unauth"):
-        st.experimental_set_query_params(page="app.py")
+    st.sidebar.page_link("app.py", label="Log in", icon="🔒")
 
 def menu():
     # Determine if a user is logged in or not, then show the correct
@@ -32,11 +31,11 @@ def menu_with_redirect():
     # Redirect users to the main page if not logged in, otherwise continue to
     # render the navigation menu
     if "role" not in st.session_state or st.session_state.role is None:
-        st.experimental_set_query_params(page="app.py")
+        st.switch_page("app.py")
     menu()
 
     # Logout button in the sidebar with a unique key
-    if st.sidebar.button("Logout", key="logout_button_menu"):
+    if st.sidebar.button("Logout", key="logout_button"):
         st.session_state.authenticated = False
         st.session_state.role = None
         st.success("Logged out successfully.")
