@@ -129,7 +129,7 @@ def initialize_session_state():
         st.session_state['api_key'] = None
 
     if 'sftp_username' not in st.session_state:
-        st.session_state['sftp_username'] = "209940897"
+        st.session_state['sftp_username'] = ""
 
 def main():
     """Main function for the Streamlit app."""
