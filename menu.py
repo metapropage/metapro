@@ -34,16 +34,11 @@ def menu_with_redirect():
         st.switch_page("app.py")
     menu()
 
-    # Display WhatsApp chat link
-    st.sidebar.markdown("""
-    <div style="text-align: center; margin-top: 20px;">
-        <a href="https://wa.me/6282265298845" target="_blank">
-            <button style="background-color: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                MetaPro
-            </button>
-        </a>
-    </div>
-    """, unsafe_allow_html=True)
+    # Logout button in the sidebar
+    if st.sidebar.button("Logout"):
+        st.session_state.authenticated = False
+        st.session_state.role = None
+        st.success("Logged out successfully.")
 
 # Call the menu_with_redirect function to display the menu and redirect if needed
 menu_with_redirect()
