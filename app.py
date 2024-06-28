@@ -84,7 +84,7 @@ if st.session_state.authenticated:
     
     - Upgrade to the MetaPro Plan for just $35 for a lifetimes one-time payment!
     
-    - Enjoy these benefits:
+    **Enjoy these benefits:**
     
       **✓.** Unlimited Upload
       
