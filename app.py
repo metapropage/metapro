@@ -65,9 +65,11 @@ if st.session_state.authenticated:
     st.markdown("### Why Choose MetaPro?")
     st.markdown("""
 
+    **Affordable: Low cost but high quality, always number one.
+
     **Website-based: Easy to use and compatible with any operating system: Windows, macOS, Linux, and Android.
     
-    **AI-Powered Precision:** Generate highly relevant and descriptive titles and tags for your images. Enhance your image metadata with unprecedented accuracy and relevance.
+    **AI-Powered Precision:** Generate highly relevant and descriptive titles and tags for your images with unprecedented accuracy and relevance.
     
     **Streamlined Workflow:** Upload your images in just a few clicks. Our app processes each photo, embeds the generated metadata, and prepares it for upload automatically and effortlessly.
 
