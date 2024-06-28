@@ -221,7 +221,7 @@ def main():
             invalid_files = [file for file in uploaded_files if file not in valid_files]
 
             if invalid_files:
-                st.error("Only JPG and JPEG files are supported.") Recommended: Maximum 40 Files per Upload
+                st.error("Only JPG and JPEG files are supported.")
 
             if valid_files and st.button("Process"):
                 with st.spinner("Processing..."):
