@@ -15,15 +15,7 @@ import json
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
-
-# Debugging import
-print("Attempting to import menu_with_redirect from menu")
-try:
-    from .menu import menu_with_redirect  # Ensure the correct relative import
-    print("Successfully imported menu_with_redirect")
-except ImportError as e:
-    print(f"Failed to import menu_with_redirect: {e}")
-    raise
+from menu import menu_with_redirect
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -153,11 +145,11 @@ def upload_to_drive(zip_file_path, credentials):
         st.error(traceback.format_exc())
         return None, None
 
-def delete_file_from_drive(file_id, credentials):
+def delete_from_drive(file_id, credentials):
     try:
         service = build('drive', 'v3', credentials=credentials)
         service.files().delete(fileId=file_id).execute()
-        st.success("File successfully deleted from Google Drive.")
+        st.success("File deleted from Google Drive successfully!")
     except Exception as e:
         st.error(f"An error occurred while deleting the file from Google Drive: {e}")
         st.error(traceback.format_exc())
@@ -321,9 +313,9 @@ def main():
                                     st.success("File uploaded to Google Drive successfully!")
                                     st.markdown(f"[Download processed images from Google Drive]({drive_link})")
 
-                                    # Button to delete the uploaded file
-                                    if st.button("Delete uploaded file"):
-                                        delete_file_from_drive(file_id, credentials)
+                                    # Add a button to delete the file from Google Drive
+                                    if st.button("Delete File from Google Drive"):
+                                        delete_from_drive(file_id, credentials)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
