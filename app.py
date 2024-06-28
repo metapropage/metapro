@@ -65,7 +65,7 @@ if st.session_state.authenticated:
     st.markdown("### Why Choose MetaPro?")
     st.markdown("""
 
-    **Affordable:** Low cost high quality
+    **Affordable:** Low cost
 
     **Website-based:** Easy to use and compatible with any operating system: Windows, macOS, Linux, and Android.
     
@@ -85,9 +85,9 @@ if st.session_state.authenticated:
     
     **Subscribe Now and Experience the Difference:**
     
-    - Upgrade to the MetaPro Basic Plan for just $0 for a 3-month.
+    - Upgrade to the MetaPro Basic Plan for just $10 for a 3-month.
     
-    - Upgrade to the MetaPro Advanced Plan for just $0 for a lifetimes.
+    - Upgrade to the MetaPro Advanced Plan for just $35 for a lifetime.
     
     **Enjoy these benefits:**
     
