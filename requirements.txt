@@ -21,5 +21,4 @@ svglib
 reportlab
 Wand
 pandas
-FPDF
 openpyxl
