@@ -34,8 +34,8 @@ def menu_with_redirect():
         st.switch_page("app.py")
     menu()
 
-    # Logout button in the sidebar
-    if st.sidebar.button("Logout"):
+    # Logout button in the sidebar with a unique key
+    if st.sidebar.button("Logout", key="logout_button"):
         st.session_state.authenticated = False
         st.session_state.role = None
         st.success("Logged out successfully.")
