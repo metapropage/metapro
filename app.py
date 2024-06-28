@@ -65,7 +65,7 @@ if st.session_state.authenticated:
     st.markdown("### Why Choose MetaPro?")
     st.markdown("""
 
-    **Affordable: Low cost but high quality, always number one.
+    **Affordable: Low cost high quality
 
     **Website-based: Easy to use and compatible with any operating system: Windows, macOS, Linux, and Android.
     
@@ -79,7 +79,7 @@ if st.session_state.authenticated:
     1. Upload Your Images: Drag and drop your JPG/JPEG files into the uploader.
     2. Generate Metadata: Watch as the app uses AI to create descriptive titles and relevant tags.
     3. Embed Metadata: The app embeds the metadata directly into your images.
-    4. Securely Download with Embedded Metadata Directly to Your Private Google Drive Account for Faster Access.
+    4. Securely Download with Embedded Metadata Directly to Your Private Google Drive Account.
     4. Effortlessly and Quickly Send Images Embedded with Metadata via SFTP.
     5. Magic Prompts: Generate Custom Prompts from Your Images and Create Similar Prompts with Ease
     
