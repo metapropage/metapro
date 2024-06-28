@@ -177,28 +177,29 @@ def main():
                                 f.write(uploaded_file.read())
 
                             # Open the image
-                            img = Image.open(temp_image_path)
+                            if temp_image_path:
+                                img = Image.open(temp_image_path)
 
-                            # Generate description and prompts
-                            description = generate_description(model, img, prompt_template, num_prompts)
-                            prompts = [f"{prompt.strip()} {additional_text}" for prompt in description.split("\n") if prompt.strip()]
-                            all_prompts.extend(prompts)
+                                # Generate description and prompts
+                                description = generate_description(model, img, prompt_template, num_prompts)
+                                prompts = [f"{prompt.strip()} {additional_text}" for prompt in description.split("\n") if prompt.strip()]
+                                all_prompts.extend(prompts)
 
-                            # Generate similar prompts
-                            similar_prompt_template = 'Create similar prompts based on this image, ensure prompts have the highest value for selling microstock, ensure the prompts generated produce popular images that will attract many buyers..'
-                            similar_description = generate_description(model, img, similar_prompt_template, num_similar_prompts)
-                            similar_prompts_list = [f"{prompt.strip()} {additional_text}" for prompt in similar_description.split("\n") if prompt.strip()]
-                            similar_prompts.extend(similar_prompts_list)
+                                # Generate similar prompts
+                                similar_prompt_template = 'Create similar prompts from this image.'
+                                similar_description = generate_description(model, img, similar_prompt_template, num_similar_prompts)
+                                similar_prompts_list = [f"{prompt.strip()} {additional_text}" for prompt in similar_description.split("\n") if prompt.strip()]
+                                similar_prompts.extend(similar_prompts_list)
 
-                            # Display thumbnail and prompts
-                            st.image(img, width=100)
-                            st.markdown("<div class='prompt-title'>Prompts</div>", unsafe_allow_html=True)
-                            for prompt in prompts:
-                                st.markdown(f"{prompt}\n")
+                                # Display thumbnail and prompts
+                                st.image(img, width=100)
+                                st.markdown("<div class='prompt-title'>Prompts</div>", unsafe_allow_html=True)
+                                for prompt in prompts:
+                                    st.markdown(f"{prompt}\n")
 
-                            st.markdown("<div class='prompt-title'>Similar Prompts</div>", unsafe_allow_html=True)
-                            for prompt in similar_prompts_list:
-                                st.markdown(f"{prompt}\n")
+                                st.markdown("<div class='prompt-title'>Similar Prompts</div>", unsafe_allow_html=True)
+                                for prompt in similar_prompts_list:
+                                    st.markdown(f"{prompt}\n")
 
                     # Export options
                     st.markdown("### Export Options")
