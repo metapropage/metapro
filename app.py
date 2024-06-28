@@ -85,9 +85,9 @@ if st.session_state.authenticated:
     
     **Subscribe Now and Experience the Difference:**
     
-    - Upgrade to the MetaPro Plan for just $10 for a 3-month one-time payment!
+    - Upgrade to the MetaPro Basic Plan for just $12 for a 3-month.
     
-    - Upgrade to the MetaPro Plan for just $35 for a lifetimes one-time payment!
+    - Upgrade to the MetaPro Advanced Plan for just $35 for a lifetimes.
     
     **Enjoy these benefits:**
     
