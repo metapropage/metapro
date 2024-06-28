@@ -4,12 +4,9 @@ def authenticated_menu():
     # Show a navigation menu for authenticated users
     st.sidebar.title("Navigation Menu")
     st.sidebar.page_link("app.py", label="Home", icon="🏠")
-    st.sidebar.empty()  # Adding space
     st.sidebar.page_link("pages/user.py", label="Upload via Gdrive", icon="🌐")
-    st.sidebar.empty()  # Adding space
     if st.session_state.role in ["admin", "super-admin"]:
         st.sidebar.page_link("pages/admin.py", label="Upload via SFTP", icon="🚀")
-        st.sidebar.empty()  # Adding space
         st.sidebar.page_link(
             "pages/super-admin.py",
             label="Magic Prompts",
@@ -36,10 +33,6 @@ def menu_with_redirect():
     if "role" not in st.session_state or st.session_state.role is None:
         st.switch_page("app.py")
     menu()
-
-    # Adding space before the logout button
-    st.sidebar.empty()  # Adding space
-    st.sidebar.empty()  # Adding more space
 
     # Logout button in the sidebar with a unique key
     if st.sidebar.button("Logout", key="logout_button"):
