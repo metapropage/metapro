@@ -35,6 +35,20 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# Hide GitHub logo
+st.markdown(
+    """
+    <style>
+    .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
+    .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
+    .viewerBadge_text__1JaDK {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Set the timezone to UTC+7 Jakarta
 JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
 
@@ -144,6 +158,14 @@ def upload_to_drive(zip_file_path, credentials):
         st.error(f"An error occurred while uploading to Google Drive: {e}")
         st.error(traceback.format_exc())
         return None
+
+def generate_description(model, img):
+    description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
+    return description.text.strip()
+
+def format_midjourney_prompt(description):
+    prompt_text = f"{description} -ar 16:9"
+    return prompt_text
 
 def main():
     """Main function for the Streamlit app."""
