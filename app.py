@@ -68,6 +68,8 @@ if st.session_state.authenticated:
     
     **Streamlined Workflow:** Upload your images in just a few clicks. Our app processes each photo, embeds the generated metadata, and prepares it for upload—automatically and effortlessly.
 
+    **Magic Prompts : ** Generate Custom Prompts from Your Images and Create Similar Prompts with Ease! Download the Generated Prompts and Similar Prompts as Excel Files.
+
     *How It Works:
     1. Upload Your Images: Drag and drop your JPG/JPEG files into the uploader.
     2. Generate Metadata: Watch as the app uses AI to create descriptive titles and relevant tags.
