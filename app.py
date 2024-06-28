@@ -76,6 +76,7 @@ if st.session_state.authenticated:
     3. Embed Metadata: The app embeds the metadata directly into your images.
     4. Download directly to Google Drive with Embedded Metadata for Faster Downloads.
     4. Effortlessly and Quickly Send Images Embedded with Metadata via SFTP.
+    5. Magic Prompts: Generate Custom Prompts from Your Images and Create Similar Prompts with Ease
     
     **Subscribe Now and Experience the Difference:**
     - **MetaPro Standard Plan: $10/2month - Unlock all fitur for 2 month
