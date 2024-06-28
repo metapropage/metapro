@@ -52,32 +52,6 @@ def generate_description(model, img, prompt_template, num_prompts):
     description = model.generate_content([f"{prompt_template} {num_prompts} prompts.", img])
     return description.text.strip()
 
-def convert_svg_to_png(svg_path):
-    try:
-        from svglib.svglib import svg2rlg
-        from reportlab.graphics import renderPM
-
-        drawing = svg2rlg(svg_path)
-        png_path = svg_path.replace('.svg', '.png')
-        renderPM.drawToFile(drawing, png_path, fmt='PNG')
-        return png_path
-    except Exception as e:
-        st.error(f"Failed to convert SVG to PNG: {e}")
-        return None
-
-def convert_eps_to_jpeg(eps_path):
-    try:
-        from wand.image import Image as WandImage
-
-        with WandImage(filename=eps_path) as img:
-            img.format = 'jpeg'
-            jpeg_path = eps_path.replace('.eps', '.jpg')
-            img.save(filename=jpeg_path)
-            return jpeg_path
-    except Exception as e:
-        st.error(f"Failed to convert EPS to JPEG: {e}")
-        return None
-
 def save_prompts_to_excel(prompts, file_path):
     df = pd.DataFrame(prompts, columns=["Prompts"])
     df.to_excel(file_path, index=False)
@@ -163,14 +137,11 @@ def main():
         # Additional text for prompts
         additional_text = st.text_input('Additional text for prompts', value='--ar 16:9')
 
-        # Additional prompt template
-        similar_prompt_template = st.text_input('Enter a similar prompt template', value='Create similar prompts from this image.')
-
         # Number of similar prompts to generate
         num_similar_prompts = st.number_input('Enter the number of similar prompts to generate', min_value=1, max_value=10, value=4)
 
         # Upload image files
-        uploaded_files = st.file_uploader('Upload Images (JPG, JPEG, PNG, SVG, EPS supported)', type=['jpg', 'jpeg', 'png', 'svg', 'eps'], accept_multiple_files=True, key="file_uploader")
+        uploaded_files = st.file_uploader('Upload Images (JPG, JPEG, PNG supported)', type=['jpg', 'jpeg', 'png'], accept_multiple_files=True, key="file_uploader")
 
         if uploaded_files and st.button("Process"):
             with st.spinner("Processing..."):
@@ -205,35 +176,29 @@ def main():
                             with open(temp_image_path, 'wb') as f:
                                 f.write(uploaded_file.read())
 
-                            # Convert SVG and EPS to JPEG if needed
-                            if uploaded_file.type == 'image/svg+xml':
-                                temp_image_path = convert_svg_to_png(temp_image_path)
-                            elif uploaded_file.type == 'application/postscript':
-                                temp_image_path = convert_eps_to_jpeg(temp_image_path)
-
                             # Open the image
-                            if temp_image_path:
-                                img = Image.open(temp_image_path)
+                            img = Image.open(temp_image_path)
 
-                                # Generate description and prompts
-                                description = generate_description(model, img, prompt_template, num_prompts)
-                                prompts = [f"{prompt.strip()} {additional_text}" for prompt in description.split("\n") if prompt.strip()]
-                                all_prompts.extend(prompts)
+                            # Generate description and prompts
+                            description = generate_description(model, img, prompt_template, num_prompts)
+                            prompts = [f"{prompt.strip()} {additional_text}" for prompt in description.split("\n") if prompt.strip()]
+                            all_prompts.extend(prompts)
 
-                                # Generate similar prompts
-                                similar_description = generate_description(model, img, similar_prompt_template, num_similar_prompts)
-                                similar_prompts_list = [f"{prompt.strip()} {additional_text}" for prompt in similar_description.split("\n") if prompt.strip()]
-                                similar_prompts.extend(similar_prompts_list)
+                            # Generate similar prompts
+                            similar_prompt_template = 'Create similar prompts based on this image, ensure prompts have the highest value for selling microstock, ensure the prompts generated produce popular images that will attract many buyers..'
+                            similar_description = generate_description(model, img, similar_prompt_template, num_similar_prompts)
+                            similar_prompts_list = [f"{prompt.strip()} {additional_text}" for prompt in similar_description.split("\n") if prompt.strip()]
+                            similar_prompts.extend(similar_prompts_list)
 
-                                # Display thumbnail and prompts
-                                st.image(img, width=100)
-                                st.markdown("<div class='prompt-title'>Prompts</div>", unsafe_allow_html=True)
-                                for prompt in prompts:
-                                    st.markdown(f"{prompt}\n")
+                            # Display thumbnail and prompts
+                            st.image(img, width=100)
+                            st.markdown("<div class='prompt-title'>Prompts</div>", unsafe_allow_html=True)
+                            for prompt in prompts:
+                                st.markdown(f"{prompt}\n")
 
-                                st.markdown("<div class='prompt-title'>Similar Prompts</div>", unsafe_allow_html=True)
-                                for prompt in similar_prompts_list:
-                                    st.markdown(f"{prompt}\n")
+                            st.markdown("<div class='prompt-title'>Similar Prompts</div>", unsafe_allow_html=True)
+                            for prompt in similar_prompts_list:
+                                st.markdown(f"{prompt}\n")
 
                     # Export options
                     st.markdown("### Export Options")
