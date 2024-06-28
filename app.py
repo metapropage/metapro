@@ -74,7 +74,7 @@ if st.session_state.authenticated:
     1. Upload Your Images: Drag and drop your JPG/JPEG files into the uploader.
     2. Generate Metadata: Watch as the app uses AI to create descriptive titles and relevant tags.
     3. Embed Metadata: The app embeds the metadata directly into your images.
-    4. Download directly to Google Drive with Embedded Metadata for Faster Downloads.
+    4. Securely Download with Embedded Metadata Directly to Your Private Google Drive Account for Faster Access.
     4. Effortlessly and Quickly Send Images Embedded with Metadata via SFTP.
     5. Magic Prompts: Generate Custom Prompts from Your Images and Create Similar Prompts with Ease
     
