@@ -80,7 +80,9 @@ if st.session_state.authenticated:
     
     **Subscribe Now and Experience the Difference:**
     
-    - Upgrade to the MetaPro Plan for just $10 for 3 months + Tax for a 3-month one-time payment! Enjoy these benefits:
+    - Upgrade to the MetaPro Plan for just $seikhlasnya for a 3-month one-time payment! Enjoy these benefits:
+    
+      **✓.** Unlimited Upload
       
       **✓.** Private Website Link
 
