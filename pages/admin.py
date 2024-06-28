@@ -243,43 +243,36 @@ def main():
                                     f.write(file.read())
                                 image_paths.append(temp_image_path)
 
-                            # Process each image and generate titles and tags using AI
-                            metadata_list = []
-                            process_placeholder = st.empty()
-                            for i, image_path in enumerate(image_paths):
-                                process_placeholder.text(f"Processing Generate Titles and Tags {i + 1}/{len(image_paths)}")
-                                try:
-                                    img = Image.open(image_path)
-                                    metadata = generate_metadata(model, img)
-                                    metadata_list.append(metadata)
-                                except Exception as e:
-                                    st.error(f"An error occurred while generating metadata for {os.path.basename(image_path)}: {e}")
-                                    st.error(traceback.format_exc())
-                                    continue
-
-                            # Embed metadata into images
                             total_files = len(image_paths)
                             files_processed = 0
 
-                            # Display the progress bar and current file number
-                            progress_placeholder = st.empty()
-                            progress_bar = progress_placeholder.progress(0)
-                            progress_placeholder.text(f"Processing images 0/{total_files}")
+                            for i, image_path in enumerate(image_paths):
+                                process_placeholder = st.empty()
+                                progress_placeholder = st.empty()
+                                progress_bar = progress_placeholder.progress(0)
 
-                            processed_image_paths = []
-                            for i, (image_path, metadata) in enumerate(zip(image_paths, metadata_list)):
-                                process_placeholder.text(f"Embedding metadata for image {i + 1}/{len(image_paths)}")
-                                updated_image_path = embed_metadata(image_path, metadata, progress_bar, files_processed, total_files)
-                                if updated_image_path:
-                                    processed_image_paths.append(updated_image_path)
-                                    files_processed += 1
-                                    # Update progress bar and current file number
-                                    progress_bar.progress(files_processed / total_files)
+                                # Process each image: generate titles and tags
+                                process_placeholder.text(f"Processing Generate Titles and Tags {i + 1}/{total_files}")
+                                try:
+                                    img = Image.open(image_path)
+                                    metadata = generate_metadata(model, img)
 
-                            # Upload processed images to SFTP server
-                            for i, image_path in enumerate(processed_image_paths):
-                                sftp_upload(image_path, sftp_username, sftp_password, progress_placeholder, i, total_files)
-                            
+                                    # Embed metadata into the image
+                                    process_placeholder.text(f"Embedding metadata for image {i + 1}/{total_files}")
+                                    updated_image_path = embed_metadata(image_path, metadata, progress_bar, files_processed, total_files)
+
+                                    if updated_image_path:
+                                        # Upload the processed image to SFTP server
+                                        sftp_upload(updated_image_path, sftp_username, sftp_password, progress_placeholder, i, total_files)
+                                        files_processed += 1
+                                        # Update progress bar and current file number
+                                        progress_bar.progress(files_processed / total_files)
+                                        progress_placeholder.text(f"Uploaded {files_processed}/{total_files} files to SFTP server.")
+                                except Exception as e:
+                                    st.error(f"An error occurred while processing image {os.path.basename(image_path)}: {e}")
+                                    st.error(traceback.format_exc())
+                                    continue
+
                             st.success("All images have been processed and uploaded successfully!")
 
                     except Exception as e:
