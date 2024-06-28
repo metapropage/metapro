@@ -24,4 +24,3 @@ pandas
 FPDF
 openpyxl
 cairosvg
-yaml
