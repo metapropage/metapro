@@ -3,21 +3,21 @@ import streamlit as st
 
 def authenticated_menu():
     # Show a navigation menu for authenticated users
-    st.sidebar.page_link("app.py", label="Home", icon="🏠")
-    st.sidebar.page_link("pages/user.py", label="Upload via Gdrive", icon="📂")
+    st.sidebar.page_link("app.py", label="🏡 Dashboard", icon="🏠")
+    st.sidebar.page_link("pages/user.py", label="📁 Upload via Gdrive", icon="📂")
     if st.session_state.role in ["admin", "super-admin"]:
-        st.sidebar.page_link("pages/admin.py", label="Upload via SFTP", icon="🔑")
+        st.sidebar.page_link("pages/admin.py", label="🔒 Upload via SFTP", icon="🔑")
         st.sidebar.page_link(
             "pages/super-admin.py",
-            label="Magic Prompts",
+            label="✨ Magic Prompts",
             disabled=st.session_state.role != "super-admin",
-            icon="✨"
+            icon="🌟"
         )
 
 
 def unauthenticated_menu():
     # Show a navigation menu for unauthenticated users
-    st.sidebar.page_link("app.py", label="Log in", icon="🔒")
+    st.sidebar.page_link("app.py", label="🔐 Log in", icon="🔒")
 
 
 def menu():
@@ -35,4 +35,3 @@ def menu_with_redirect():
     if "role" not in st.session_state or st.session_state.role is None:
         st.switch_page("app.py")
     menu()
-
