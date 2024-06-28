@@ -214,7 +214,7 @@ def main():
         # st.session_state['tags_prompt'] = tags_prompt
 
         # Upload image files
-        uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
+        uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG Supported) Recommended: Maximum 40 Files per Upload)', accept_multiple_files=True)
 
         if uploaded_files:
             valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
