@@ -163,6 +163,12 @@ def main():
         # Additional text for prompts
         additional_text = st.text_input('Additional text for prompts', value='--ar 16:9')
 
+        # Additional prompt template
+        similar_prompt_template = st.text_input('Enter a similar prompt template', value='Create similar prompts from this image.')
+
+        # Number of similar prompts to generate
+        num_similar_prompts = st.number_input('Enter the number of similar prompts to generate', min_value=1, max_value=10, value=4)
+
         # Upload image files
         uploaded_files = st.file_uploader('Upload Images (JPG, JPEG, PNG, SVG, EPS supported)', type=['jpg', 'jpeg', 'png', 'svg', 'eps'], accept_multiple_files=True, key="file_uploader")
 
@@ -189,6 +195,7 @@ def main():
                     model = genai.GenerativeModel('gemini-pro-vision')
 
                     all_prompts = []  # To store all generated prompts
+                    similar_prompts = []  # To store all generated similar prompts
 
                     # Create a temporary directory to store the uploaded images
                     with tempfile.TemporaryDirectory() as temp_dir:
@@ -213,15 +220,24 @@ def main():
                                 prompts = [f"{prompt.strip()} {additional_text}" for prompt in description.split("\n") if prompt.strip()]
                                 all_prompts.extend(prompts)
 
+                                # Generate similar prompts
+                                similar_description = generate_description(model, img, similar_prompt_template, num_similar_prompts)
+                                similar_prompts_list = [f"{prompt.strip()} {additional_text}" for prompt in similar_description.split("\n") if prompt.strip()]
+                                similar_prompts.extend(similar_prompts_list)
+
                                 # Display thumbnail and prompts
                                 st.image(img, width=100)
                                 st.markdown("<div class='prompt-title'>Prompts</div>", unsafe_allow_html=True)
                                 for prompt in prompts:
                                     st.markdown(f"{prompt}\n")
 
+                                st.markdown("<div class='prompt-title'>Similar Prompts</div>", unsafe_allow_html=True)
+                                for prompt in similar_prompts_list:
+                                    st.markdown(f"{prompt}\n")
+
                     # Export options
                     st.markdown("### Export Options")
-                    col1, col2 = st.columns(2)
+                    col1, col2, col3 = st.columns(3)
                     with col1:
                         with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
                             excel_file = save_prompts_to_excel(all_prompts, tmp.name)
@@ -232,6 +248,11 @@ def main():
                             pdf_file = save_prompts_to_pdf(all_prompts, tmp.name)
                         with open(pdf_file, "rb") as file:
                             st.download_button(label="Download PDF", data=file, file_name="prompts.pdf", mime="application/pdf")
+                    with col3:
+                        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                            similar_excel_file = save_prompts_to_excel(similar_prompts, tmp.name)
+                        with open(similar_excel_file, "rb") as file:
+                            st.download_button(label="Download Similar Prompts Excel", data=file, file_name="similar_prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
