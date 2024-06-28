@@ -40,6 +40,8 @@ def menu_with_redirect():
     # Adding space before the logout button
     st.sidebar.empty()  # Adding space
     st.sidebar.empty()  # Adding more space
+    st.sidebar.empty()  # Adding more space
+    st.sidebar.empty()  # Adding more space
 
     # Logout button in the sidebar with a unique key
     if st.sidebar.button("Logout", key="logout_button"):
