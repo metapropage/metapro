@@ -203,22 +203,34 @@ def main():
 
                     # Export options
                     st.markdown("### Export Options")
-                    col1, col2, col3 = st.columns(3)
+                    col1, col2 = st.columns(2)
                     with col1:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-                            excel_file = save_prompts_to_excel(all_prompts, tmp.name)
-                        with open(excel_file, "rb") as file:
-                            st.download_button(label="Download Excel", data=file, file_name="prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        excel_download = st.checkbox("Download as Excel")
                     with col2:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
-                            pdf_file = save_prompts_to_pdf(all_prompts, tmp.name)
-                        with open(pdf_file, "rb") as file:
-                            st.download_button(label="Download PDF", data=file, file_name="prompts.pdf", mime="application/pdf")
-                    with col3:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-                            similar_excel_file = save_prompts_to_excel(similar_prompts, tmp.name)
-                        with open(similar_excel_file, "rb") as file:
-                            st.download_button(label="Download Similar Prompts Excel", data=file, file_name="similar_prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        pdf_download = st.checkbox("Download as PDF")
+
+                    if excel_download or pdf_download:
+                        if excel_download:
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                                excel_file = save_prompts_to_excel(all_prompts, tmp.name)
+                            with open(excel_file, "rb") as file:
+                                st.download_button(label="Download Prompts Excel", data=file, file_name="prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                        
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                                similar_excel_file = save_prompts_to_excel(similar_prompts, tmp.name)
+                            with open(similar_excel_file, "rb") as file:
+                                st.download_button(label="Download Similar Prompts Excel", data=file, file_name="similar_prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+                        if pdf_download:
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                                pdf_file = save_prompts_to_pdf(all_prompts, tmp.name)
+                            with open(pdf_file, "rb") as file:
+                                st.download_button(label="Download Prompts PDF", data=file, file_name="prompts.pdf", mime="application/pdf")
+                            
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                                similar_pdf_file = save_prompts_to_pdf(similar_prompts, tmp.name)
+                            with open(similar_pdf_file, "rb") as file:
+                                st.download_button(label="Download Similar Prompts PDF", data=file, file_name="similar_prompts.pdf", mime="application/pdf")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
