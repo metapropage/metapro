@@ -133,8 +133,9 @@ def initialize_session_state():
 
 def main():
     """Main function for the Streamlit app."""
-    initialize_session_state()
 
+    initialize_session_state()
+    
     # Display WhatsApp chat link
     st.markdown("""
     <div style="text-align: center; margin-top: 20px;">
@@ -171,7 +172,7 @@ def main():
             st.error("Invalid validation key. Please enter the correct key.")
 
     if st.session_state['license_validated']:
-        # Check the license file for the start date
+        # Read start date from license file
         with open(license_file, 'r') as file:
             start_date_str = file.read().strip()
             start_date = datetime.fromisoformat(start_date_str)
@@ -194,12 +195,23 @@ def main():
         if api_key:
             st.session_state['api_key'] = api_key
 
-        # SFTP credentials input
-        sftp_username = st.text_input('SFTP Username', value=st.session_state['sftp_username'] or '')
-        sftp_password = st.text_input('SFTP Password', type='password')
+        # SFTP Username input
+        sftp_username = st.text_input('SFTP Username', value=st.session_state['sftp_username'])
 
+        # Save SFTP username in session state
         if sftp_username:
             st.session_state['sftp_username'] = sftp_username
+
+        # SFTP Password input
+        sftp_password = st.text_input('SFTP Password', type='password')
+
+        # Commented out the Title and tags prompts input
+        # title_prompt = st.text_area('Title Prompt', value=st.session_state['title_prompt'], height=100)
+        # tags_prompt = st.text_area('Tags Prompt', value=st.session_state['tags_prompt'], height=100)
+
+        # Save prompts in session state
+        # st.session_state['title_prompt'] = title_prompt
+        # st.session_state['tags_prompt'] = tags_prompt
 
         # Upload image files
         uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG supported)', accept_multiple_files=True)
@@ -220,7 +232,7 @@ def main():
                                 'date': current_date.date(),
                                 'count': 0
                             }
-                        
+
                         # Check if remaining uploads are available
                         if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
                             remaining_uploads = 1000 - st.session_state['upload_count']['count']
@@ -246,34 +258,36 @@ def main():
                             total_files = len(image_paths)
                             files_processed = 0
 
-                            for i, image_path in enumerate(image_paths):
-                                process_placeholder = st.empty()
-                                progress_placeholder = st.empty()
-                                progress_bar = progress_placeholder.progress(0)
+                            # Progress placeholder for embedding metadata
+                            embed_progress_placeholder = st.empty()
+                            # Progress placeholder for SFTP upload
+                            upload_progress_placeholder = st.empty()
 
-                                # Process each image: generate titles and tags
-                                process_placeholder.text(f"Processing Generate Titles and Tags {i + 1}/{total_files}")
+                            # Process each image one by one
+                            for image_path in image_paths:
                                 try:
+                                    # Open image
                                     img = Image.open(image_path)
+
+                                    # Generate metadata
                                     metadata = generate_metadata(model, img)
 
-                                    # Embed metadata into the image
-                                    process_placeholder.text(f"Embedding metadata for image {i + 1}/{total_files}")
-                                    updated_image_path = embed_metadata(image_path, metadata, progress_bar, files_processed, total_files)
-
+                                    # Embed metadata
+                                    updated_image_path = embed_metadata(image_path, metadata, embed_progress_placeholder, files_processed, total_files)
+                                    
+                                    # Delay before uploading via SFTP
+                                    time.sleep(1)
+                                    # Upload via SFTP
                                     if updated_image_path:
-                                        # Upload the processed image to SFTP server
-                                        sftp_upload(updated_image_path, sftp_username, sftp_password, progress_placeholder, i, total_files)
+                                        sftp_upload(updated_image_path, sftp_username, sftp_password, upload_progress_placeholder, files_processed, total_files)
                                         files_processed += 1
-                                        # Update progress bar and current file number
-                                        progress_bar.progress(files_processed / total_files)
-                                        progress_placeholder.text(f"Uploaded {files_processed}/{total_files} files to SFTP server.")
+
                                 except Exception as e:
-                                    st.error(f"An error occurred while processing image {os.path.basename(image_path)}: {e}")
+                                    st.error(f"An error occurred while processing {os.path.basename(image_path)}: {e}")
                                     st.error(traceback.format_exc())
                                     continue
 
-                            st.success("All images have been processed and uploaded successfully!")
+                            st.success(f"Successfully processed and transferred {files_processed} files to the SFTP server.")
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
