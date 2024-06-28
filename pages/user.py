@@ -212,7 +212,7 @@ def main():
             start_date = datetime.fromisoformat(start_date_str)
 
         # Calculate the expiration date
-        expiration_date = start_date + timedelta(days=31)
+        expiration_date = start_date + timedelta(days=91)
         current_date = datetime.now(JAKARTA_TZ)
 
         if current_date > expiration_date:
