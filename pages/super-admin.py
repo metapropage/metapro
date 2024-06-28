@@ -1,213 +1,44 @@
 import streamlit as st
-import os
-import tempfile
-from PIL import Image
-import google.generativeai as genai
-import traceback
-from datetime import datetime, timedelta
-import pytz
-from menu import menu_with_redirect
-import pandas as pd
 
-st.set_option("client.showSidebarNavigation", False)
+# Configure the page with sidebar initially opened
+st.set_page_config(
+    page_title="Meta Pro",
+    page_icon="🏠",
+    layout="wide",
+    initial_sidebar_state="expanded",  # This ensures the sidebar is open by default
+)
 
-# Redirect to app.py if not logged in, otherwise show the navigation menu
+def authenticated_menu():
+    # Show a navigation menu for authenticated users
+    st.sidebar.page_link("app.py", label="Home", icon="🏠")
+    st.sidebar.page_link("pages/user.py", label="Upload via Gdrive", icon="📂")
+    if st.session_state.role in ["admin", "super-admin"]:
+        st.sidebar.page_link("pages/admin.py", label="Upload via SFTP", icon="🔑")
+        st.sidebar.page_link(
+            "pages/super-admin.py",
+            label="Magic Prompts",
+            disabled=st.session_state.role != "super-admin",
+            icon="✨"
+        )
+
+def unauthenticated_menu():
+    # Show a navigation menu for unauthenticated users
+    st.sidebar.page_link("app.py", label="Log in", icon="🔒")
+
+def menu():
+    # Determine if a user is logged in or not, then show the correct
+    # navigation menu
+    if "role" not in st.session_state or st.session_state.role is None:
+        unauthenticated_menu()
+        return
+    authenticated_menu()
+
+def menu_with_redirect():
+    # Redirect users to the main page if not logged in, otherwise continue to
+    # render the navigation menu
+    if "role" not in st.session_state or st.session_state.role is None:
+        st.switch_page("app.py")
+    menu()
+
+# Initialize the menu
 menu_with_redirect()
-
-# Apply custom styling
-st.markdown("""
-    <style>
-        #MainMenu, header, footer {
-            visibility: hidden;
-        }
-        section[data-testid="stSidebar"] {
-            top: 0;
-            height: 10vh;
-        }
-        .prompt-title {
-            font-size: 14px;
-            font-weight: bold;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-
-# Set the timezone to UTC+7 Jakarta
-JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
-
-# Initialize session state for license validation
-if 'license_validated' not in st.session_state:
-    st.session_state['license_validated'] = False
-
-if 'upload_count' not in st.session_state:
-    st.session_state['upload_count'] = {
-        'date': None,
-        'count': 0
-    }
-
-if 'api_key' not in st.session_state:
-    st.session_state['api_key'] = None
-
-def generate_description(model, img, prompt_template, num_prompts):
-    description = model.generate_content([f"{prompt_template} {num_prompts} prompts.", img])
-    return description.text.strip()
-
-def save_prompts_to_excel(prompts, file_path):
-    df = pd.DataFrame(prompts, columns=["Prompts"])
-    df.to_excel(file_path, index=False)
-    return file_path
-
-def main():
-    """Main function for the Streamlit app."""
-
-    # Display WhatsApp chat link
-    st.markdown("""
-    <div style="text-align: center; margin-top: 20px;">
-        <a href="https://wa.me/6285328007533" target="_blank">
-            <button style="background-color: #1976d2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
-                MetaPro
-            </button>
-        </a>
-    </div>
-    """, unsafe_allow_html=True)
-
-    # Check if license has already been validated
-    license_file = "license.txt"
-    if not st.session_state['license_validated']:
-        if os.path.exists(license_file):
-            with open(license_file, 'r') as file:
-                start_date_str = file.read().strip()
-                start_date = datetime.fromisoformat(start_date_str)
-                st.session_state['license_validated'] = True
-        else:
-            # License key input
-            validation_key = st.text_input('License Key', type='password')
-
-    # Check if validation key is correct
-    correct_key = "dian12345"
-
-    if not st.session_state['license_validated'] and validation_key:
-        if validation_key == correct_key:
-            st.session_state['license_validated'] = True
-            start_date = datetime.now(JAKARTA_TZ)
-            with open(license_file, 'w') as file:
-                file.write(start_date.isoformat())
-        else:
-            st.error("Invalid validation key. Please enter the correct key.")
-
-    if st.session_state['license_validated']:
-        # Check the license file for the start date
-        with open(license_file, 'r') as file:
-            start_date_str = file.read().strip()
-            start_date = datetime.fromisoformat(start_date_str)
-
-        # Calculate the expiration date
-        expiration_date = start_date + timedelta(days=31)
-        current_date = datetime.now(JAKARTA_TZ)
-
-        if current_date > expiration_date:
-            st.error("Your license has expired. Please contact support for a new license key.")
-            return
-        else:
-            days_remaining = (expiration_date - current_date).days
-            st.success(f"License valid. You have {days_remaining} days remaining.")
-
-        # API Key input
-        api_key = st.text_input('Enter your [API](https://makersuite.google.com/app/apikey) Key', value=st.session_state['api_key'] or '')
-
-        # Save API key in session state
-        if api_key:
-            st.session_state['api_key'] = api_key
-
-        # Hardcoded prompt template
-        prompt_template = 'Create prompts for microstock, The prompts must be able to produce images exactly like this one.'
-
-        # Number of prompts to generate
-        num_prompts = st.number_input('Enter the number of prompts to generate', min_value=1, max_value=10, value=1)
-
-        # Additional text for prompts
-        additional_text = st.text_input('Additional text for prompts', value='--ar 16:9')
-
-        # Number of similar prompts to generate
-        num_similar_prompts = st.number_input('Enter the number of similar prompts to generate', min_value=1, max_value=10, value=4)
-
-        # Upload image files
-        uploaded_files = st.file_uploader('Upload Images (JPG, JPEG, PNG supported)', type=['jpg', 'jpeg', 'png'], accept_multiple_files=True, key="file_uploader")
-
-        if uploaded_files and st.button("Process"):
-            with st.spinner("Processing..."):
-                try:
-                    # Check and update upload count for the current date
-                    if st.session_state['upload_count']['date'] != current_date.date():
-                        st.session_state['upload_count'] = {
-                            'date': current_date.date(),
-                            'count': 0
-                        }
-
-                    # Check if remaining uploads are available
-                    if st.session_state['upload_count']['count'] >= 1000:
-                        remaining_uploads = 0
-                        st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
-                        return
-                    else:
-                        st.session_state['upload_count']['count'] += len(uploaded_files)
-                        st.success(f"Upload successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
-
-                    genai.configure(api_key=api_key)  # Configure AI model with API key
-                    model = genai.GenerativeModel('gemini-pro-vision')
-
-                    all_prompts = []  # To store all generated prompts
-                    similar_prompts = []  # To store all generated similar prompts
-
-                    # Create a temporary directory to store the uploaded images
-                    with tempfile.TemporaryDirectory() as temp_dir:
-                        for uploaded_file in uploaded_files:
-                            # Save the uploaded image to the temporary directory
-                            temp_image_path = os.path.join(temp_dir, uploaded_file.name)
-                            with open(temp_image_path, 'wb') as f:
-                                f.write(uploaded_file.read())
-
-                            # Open the image
-                            if temp_image_path:
-                                img = Image.open(temp_image_path)
-
-                                # Generate description and prompts
-                                description = generate_description(model, img, prompt_template, num_prompts)
-                                prompts = [f"{prompt.strip()} {additional_text}" for prompt in description.split("\n") if prompt.strip()]
-                                all_prompts.extend(prompts)
-
-                                # Generate similar prompts
-                                similar_prompt_template = 'Create similar prompts based on the image. Ensure the prompts result in popular images on photostock, especially on Adobe Stock.'
-                                similar_description = generate_description(model, img, similar_prompt_template, num_similar_prompts)
-                                similar_prompts_list = [f"{prompt.strip()} {additional_text}" for prompt in similar_description.split("\n") if prompt.strip()]
-                                similar_prompts.extend(similar_prompts_list)
-
-                                # Display thumbnail and prompts
-                                st.image(img, width=100)
-                                st.markdown("<div class='prompt-title'>Prompts</div>", unsafe_allow_html=True)
-                                for prompt in prompts:
-                                    st.markdown(f"{prompt}\n")
-
-                                st.markdown("<div class='prompt-title'>Similar Prompts</div>", unsafe_allow_html=True)
-                                for prompt in similar_prompts_list:
-                                    st.markdown(f"{prompt}\n")
-
-                    # Export options
-                    st.markdown("### Export Options")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-                            excel_file = save_prompts_to_excel(all_prompts, tmp.name)
-                        with open(excel_file, "rb") as file:
-                            st.download_button(label="Download Excel", data=file, file_name="prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                    with col2:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-                            similar_excel_file = save_prompts_to_excel(similar_prompts, tmp.name)
-                        with open(similar_excel_file, "rb") as file:
-                            st.download_button(label="Download Similar Prompts Excel", data=file, file_name="similar_prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-                except Exception as e:
-                    st.error(f"An error occurred: {e}")
-                    st.error(traceback.format_exc())  # Print detailed error traceback for debugging
-
-if __name__ == '__main__':
-    main()
