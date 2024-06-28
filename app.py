@@ -1,4 +1,5 @@
 import streamlit as st
+from urllib.parse import urlparse, parse_qs
 
 # Apply custom styling
 st.markdown("""
@@ -13,8 +14,9 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# URL for the external login page
-LOGIN_URL = "https://authkit.streamlit.io/?client_id=project_01EZ8RPVCZQ40ZGBV6Y87N8V8V&redirect_uri=https%3A%2F%2Flogin.streamlit.io%2Fapi%2Fv1%2Flogin%2Fshare%2Fcallback&response_type=code&state=GJfSepgj4g4vCJLgGZeXXlxxMRGFCtvp0GWT26u_TZbQkbyLIGn-P11bpOSo1DmZhT5QfRZudUSzvV7HRFPh321ust7fECJIzIJtcVtvVlFGYHLBXWTRyG_uT8dB6ymq9_4kfgghK_ZNwMGwgZK2n6JEeKeUyQLMXvcgWws-hMUmbpGdfMhwUnZS17LJNOShgQkN1RD3aFZO0y0fY4wyG9CkfJz5vC92miqhFoeuFBgrjtx2EyxlAV0ER7uabavs2bfAf3WukwVccxy2jd-uKrbxKNuPkSTc_jWetOQ1_aGNIYh7-tZZknHKADXOx-vpq4IkLw6H5L7smUdKyisIEfIxgXHZkTrDHN-CsbobyLu9BgAmAnCnBN-J8uZhklW-SNGanBVU3M3tBKj1o9YYzrw96VC3huWC1Efb0CC_qh8rpwMeV2f4N6GpGeJ8aiBevbllHjSzSdNUY6JhmM1uLws7k9ysdAR2&authorization_session_id=01J1ESP1BFJ53SAZK8B0RSZB3X"
+# Predefined username and password (for demonstration purposes)
+USERNAME = "admin"
+PASSWORD = "dian"
 
 # Initialize st.session_state variables
 if "authenticated" not in st.session_state:
@@ -35,11 +37,21 @@ def authenticate(username, password):
     else:
         st.error("Incorrect username or password")
 
-# If the user is not authenticated, show the external login page
+# Check for URL parameters for authentication
+query_params = st.experimental_get_query_params()
+if "code" in query_params and "state" in query_params:
+    # Here you would typically validate the code and state with your backend or authentication service
+    st.session_state.authenticated = True
+    st.session_state.role = "super-admin"  # Set the role based on the authentication service response
+    st.session_state.rerun = True
+
+# If the user is not authenticated, show the login link
 if not st.session_state.authenticated:
     st.title("Login")
-    st.markdown(f'<iframe src="{LOGIN_URL}" width="100%" height="500px"></iframe>', unsafe_allow_html=True)
-    # Display the local authentication form for fallback or additional validation
+    login_url = "https://authkit.streamlit.io/?client_id=project_01EZ8RPVCZQ40ZGBV6Y87N8V8V&redirect_uri=https%3A%2F%2Flogin.streamlit.io%2Fapi%2Fv1%2Flogin%2Fshare%2Fcallback&response_type=code&state=random_state_value"
+    st.markdown(f'[Login here]({login_url})')
+
+    # Local authentication form for fallback or additional validation
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
@@ -49,7 +61,7 @@ if not st.session_state.authenticated:
 if st.session_state.authenticated:
     if st.session_state.rerun:
         st.session_state.rerun = False
-        st.rerun()
+        st.experimental_rerun()
 
     menu()  # Render the dynamic menu
 
