@@ -42,4 +42,4 @@ def menu_with_redirect():
         st.success("Logged out successfully.")
 
 # Call the menu_with_redirect function to display the menu and redirect if needed
-menu_with_redirect()
+menu_with_redirect() 
