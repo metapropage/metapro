@@ -139,28 +139,11 @@ def upload_to_drive(zip_file_path, credentials):
             body={'type': 'anyone', 'role': 'reader'}
         ).execute()
 
-        return file.get('id'), file.get('webViewLink')
+        return file.get('webViewLink')
     except Exception as e:
         st.error(f"An error occurred while uploading to Google Drive: {e}")
         st.error(traceback.format_exc())
-        return None, None
-
-def delete_from_drive(file_id, credentials):
-    try:
-        service = build('drive', 'v3', credentials=credentials)
-        service.files().delete(fileId=file_id).execute()
-        st.success("File deleted from Google Drive successfully!")
-    except Exception as e:
-        st.error(f"An error occurred while deleting the file from Google Drive: {e}")
-        st.error(traceback.format_exc())
-
-def generate_description(model, img):
-    description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
-    return description.text.strip()
-
-def format_midjourney_prompt(description):
-    prompt_text = f"{description} -ar 16:9"
-    return prompt_text
+        return None
 
 def main():
     """Main function for the Streamlit app."""
@@ -303,19 +286,13 @@ def main():
                             zip_file_path = zip_processed_images(processed_image_paths)
 
                             if zip_file_path:
-                                st.success(f"Successfully zipped processed {zip_file_path}")
-
                                 # Upload zip file to Google Drive and get the shareable link
                                 credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=['https://www.googleapis.com/auth/drive.file'])
-                                file_id, drive_link = upload_to_drive(zip_file_path, credentials)
+                                drive_link = upload_to_drive(zip_file_path, credentials)
 
                                 if drive_link:
                                     st.success("File uploaded to Google Drive successfully!")
                                     st.markdown(f"[Download processed images from Google Drive]({drive_link})")
-
-                                    # Add a button to delete the file from Google Drive
-                                    if st.button("Delete File from Google Drive"):
-                                        delete_from_drive(file_id, credentials)
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
