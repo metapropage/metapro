@@ -51,6 +51,9 @@ if 'upload_count' not in st.session_state:
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
 
+if 'drive_file_id' not in st.session_state:
+    st.session_state['drive_file_id'] = None
+
 # Function to normalize and clean text
 def normalize_text(text):
     normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
@@ -139,11 +142,20 @@ def upload_to_drive(zip_file_path, credentials):
             body={'type': 'anyone', 'role': 'reader'}
         ).execute()
 
-        return file.get('webViewLink')
+        return file.get('id'), file.get('webViewLink')
     except Exception as e:
         st.error(f"An error occurred while uploading to Google Drive: {e}")
         st.error(traceback.format_exc())
-        return None
+        return None, None
+
+def delete_file_from_drive(file_id, credentials):
+    try:
+        service = build('drive', 'v3', credentials=credentials)
+        service.files().delete(fileId=file_id).execute()
+        st.success("File deleted from Google Drive successfully!")
+    except Exception as e:
+        st.error(f"An error occurred while deleting the file from Google Drive: {e}")
+        st.error(traceback.format_exc())
 
 def generate_description(model, img):
     description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
@@ -298,15 +310,23 @@ def main():
 
                                 # Upload zip file to Google Drive and get the shareable link
                                 credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=['https://www.googleapis.com/auth/drive.file'])
-                                drive_link = upload_to_drive(zip_file_path, credentials)
+                                drive_file_id, drive_link = upload_to_drive(zip_file_path, credentials)
 
                                 if drive_link:
+                                    st.session_state['drive_file_id'] = drive_file_id
                                     st.success("File uploaded to Google Drive successfully!")
                                     st.markdown(f"[Download processed images from Google Drive]({drive_link})")
 
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+
+        # If the Google Drive link is displayed, show the delete button
+        if st.session_state['drive_file_id']:
+            if st.button("Delete"):
+                credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=['https://www.googleapis.com/auth/drive.file'])
+                delete_file_from_drive(st.session_state['drive_file_id'], credentials)
+                st.session_state['drive_file_id'] = None
 
 if __name__ == '__main__':
     main()
