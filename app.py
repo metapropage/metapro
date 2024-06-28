@@ -83,8 +83,11 @@ if st.session_state.authenticated:
     - Upgrade to MetaPro Plan for just $ for 2 months!
       Enjoy These Benefits:
       **✓**Private Website Link
+
       **✓**Private Google Drive Account
+      
       **✓**Unlock All Features for 2 Months
+      
       **✓**Free Daily Website Updates
     
     **Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.**
