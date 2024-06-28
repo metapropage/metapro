@@ -82,6 +82,7 @@ if st.session_state.authenticated:
     
     - Upgrade to MetaPro Plan for just $ for 2 months!
       Enjoy These Benefits:
+      
       **✓**Private Website Link
 
       **✓**Private Google Drive Account
