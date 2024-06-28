@@ -64,7 +64,7 @@ if st.session_state.authenticated:
     # Additional Information
     st.markdown("### Why Choose MetaPro?")
     st.markdown("""
-    **AI-Powered Precision:** Leverage the power of Google Generative AI to automatically generate highly relevant and descriptive titles and tags for your images. Enhance your image metadata with unprecedented accuracy and relevance.
+    **AI-Powered Precision:** Generate highly relevant and descriptive titles and tags for your images. Enhance your image metadata with unprecedented accuracy and relevance.
     
     **Streamlined Workflow:** Upload your images in just a few clicks. Our app processes each photo, embeds the generated metadata, and prepares it for upload—automatically and effortlessly.
 
