@@ -79,8 +79,8 @@ if st.session_state.authenticated:
     5. Magic Prompts: Generate Custom Prompts from Your Images and Create Similar Prompts with Ease
     
     **Subscribe Now and Experience the Difference:**
-    - **MetaPro Standard Plan: $10/2month - Unlock all fitur for 2 month
+    - **MetaPro Standard Plan: $10 for 2 months - Unlock all features for 2 months.
 
-    Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.
+    **Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.**
 
     """)
