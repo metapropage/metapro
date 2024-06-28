@@ -80,7 +80,7 @@ if st.session_state.authenticated:
     
     **Subscribe Now and Experience the Difference:**
     
-    - **MetaPro Plan: $0 for 2 months - Unlock all features for 2 months.
+    - **MetaPro Plan: $* for 2 months - Unlock all features for 2 months.
 
     **Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.**
 
