@@ -83,7 +83,7 @@ def embed_metadata(image_path, metadata, progress_bar, files_processed, total_fi
         # Update progress bar
         files_processed += 1
         progress_bar.progress(files_processed / total_files)
-        progress_bar.text(f"Embedding metadata for image {files_processed}/{total_files}")
+        progress_bar.text(f"Processing images to generate titles, tags, and embed metadata {files_processed}/{total_files}")
 
         # Return the updated image path for further processing
         return image_path
