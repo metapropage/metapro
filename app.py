@@ -27,11 +27,15 @@ if "authenticated" not in st.session_state:
 if "role" not in st.session_state:
     st.session_state.role = None
 
+if "rerun" not in st.session_state:
+    st.session_state.rerun = False
+
 # Authentication function
 def authenticate(username, password):
     if username == USERNAME and password == PASSWORD:
         st.session_state.authenticated = True
         st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
+        st.session_state.rerun = True
     else:
         st.error("Incorrect username or password")
 
@@ -42,18 +46,20 @@ if not st.session_state.authenticated:
     password = st.text_input("Password", type="password")
     if st.button("Login"):
         authenticate(username, password)
-        if st.session_state.authenticated:
-            st.experimental_rerun()  # Rerun the app to reflect authentication status
 
 # If authenticated, show the menu and additional information
 if st.session_state.authenticated:
+    if st.session_state.rerun:
+        st.session_state.rerun = False
+        st.rerun()
+
     menu()  # Render the dynamic menu
 
     # Logout button in the sidebar
     if st.sidebar.button("Logout"):
         st.session_state.authenticated = False
         st.session_state.role = None
-        st.experimental_rerun()  # Rerun the app to reflect logout status
+        st.success("Logged out successfully.")
 
     # Additional Information
     st.markdown("### Why Choose MetaPro?")
@@ -87,5 +93,5 @@ if st.session_state.authenticated:
       **✓.** Free Daily Website Updates
     
     **Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.**
-    """)
 
+    """)
