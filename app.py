@@ -98,6 +98,8 @@ if st.session_state.authenticated:
       **✓.** Unlock All Features
       
       **✓.** Free Daily Website Updates
+
+      **✓.** Customizable: Manually generate titles and tags with your own commands
     
     **Ready to revolutionize your workflow? Subscribe today and take the first step towards a smarter, more efficient image management solution.**
 
