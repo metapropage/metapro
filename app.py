@@ -1,8 +1,5 @@
 import streamlit as st
 
-# Assuming the menu function is defined in a module named 'menu'
-from menu import menu
-
 # Apply custom styling
 st.markdown("""
     <style>
@@ -16,9 +13,8 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Predefined username and password (for demonstration purposes)
-USERNAME = "admin"
-PASSWORD = "dian"
+# URL for the external login page
+LOGIN_URL = "https://authkit.streamlit.io/?client_id=project_01EZ8RPVCZQ40ZGBV6Y87N8V8V&redirect_uri=https%3A%2F%2Flogin.streamlit.io%2Fapi%2Fv1%2Flogin%2Fshare%2Fcallback&response_type=code&state=GJfSepgj4g4vCJLgGZeXXlxxMRGFCtvp0GWT26u_TZbQkbyLIGn-P11bpOSo1DmZhT5QfRZudUSzvV7HRFPh321ust7fECJIzIJtcVtvVlFGYHLBXWTRyG_uT8dB6ymq9_4kfgghK_ZNwMGwgZK2n6JEeKeUyQLMXvcgWws-hMUmbpGdfMhwUnZS17LJNOShgQkN1RD3aFZO0y0fY4wyG9CkfJz5vC92miqhFoeuFBgrjtx2EyxlAV0ER7uabavs2bfAf3WukwVccxy2jd-uKrbxKNuPkSTc_jWetOQ1_aGNIYh7-tZZknHKADXOx-vpq4IkLw6H5L7smUdKyisIEfIxgXHZkTrDHN-CsbobyLu9BgAmAnCnBN-J8uZhklW-SNGanBVU3M3tBKj1o9YYzrw96VC3huWC1Efb0CC_qh8rpwMeV2f4N6GpGeJ8aiBevbllHjSzSdNUY6JhmM1uLws7k9ysdAR2&authorization_session_id=01J1ESP1BFJ53SAZK8B0RSZB3X"
 
 # Initialize st.session_state variables
 if "authenticated" not in st.session_state:
@@ -39,9 +35,11 @@ def authenticate(username, password):
     else:
         st.error("Incorrect username or password")
 
-# If the user is not authenticated, show the login form
+# If the user is not authenticated, show the external login page
 if not st.session_state.authenticated:
     st.title("Login")
+    st.markdown(f'<iframe src="{LOGIN_URL}" width="100%" height="500px"></iframe>', unsafe_allow_html=True)
+    # Display the local authentication form for fallback or additional validation
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
