@@ -92,7 +92,7 @@ if st.session_state.authenticated:
 
       **✓.** Private Google Drive Account
       
-      **✓.** Unlock All Features for 3 Months
+      **✓.** Unlock All Features
       
       **✓.** Free Daily Website Updates
     
