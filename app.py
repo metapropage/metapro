@@ -80,9 +80,11 @@ if st.session_state.authenticated:
     
     **Subscribe Now and Experience the Difference:**
     
-    - Upgrade to the MetaPro Plan for just $9 for a 3-month one-time payment! Enjoy these benefits:
+    - Upgrade to the MetaPro Plan for just $9 for a 3-month one-time payment!
     
-    - Upgrade to the MetaPro Plan for just $35 for a lifetimes one-time payment! Enjoy these benefits:
+    - Upgrade to the MetaPro Plan for just $35 for a lifetimes one-time payment!
+    
+    - Enjoy these benefits:
     
       **✓.** Unlimited Upload
       
