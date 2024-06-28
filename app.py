@@ -80,7 +80,7 @@ if st.session_state.authenticated:
     
     **Subscribe Now and Experience the Difference:**
     
-    - Upgrade to the MetaPro Plan for just $* for a 2-month one-time payment! Enjoy these benefits:
+    -Upgrade to the MetaPro Plan for just $* for a 2-month one-time payment! Enjoy these benefits:
       
       **✓.** Private Website Link
 
