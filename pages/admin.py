@@ -203,7 +203,7 @@ def main():
             st.success(f"License valid. You have {days_remaining} days remaining.")
 
         # API Key input
-        api_key = st.text_input('Enter your API [Key](https://makersuite.google.com/app/apikey)', value=st.session_state['api_key'] or '')
+        api_key = st.text_input('Enter your [API](https://makersuite.google.com/app/apikey) Key', value=st.session_state['api_key'] or '')
 
         # Save API key in session state
         if api_key:
