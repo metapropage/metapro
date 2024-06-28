@@ -75,7 +75,7 @@ if st.session_state.authenticated:
     2. Generate Metadata: Watch as the app uses AI to create descriptive titles and relevant tags.
     3. Embed Metadata: The app embeds the metadata directly into your images.
     4. Directly upload to Google Drive for faster downloads.
-    4. Directly upload to Google Drive for faster downloads.
+    4. Effortlessly and Quickly Send Images Embedded with Metadata via SFTP.
     
     **Subscribe Now and Experience the Difference:**
     - **MetaPro Standard Plan: $10/2month - Unlock all fitur for 2 month
