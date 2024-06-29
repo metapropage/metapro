@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 import pytz
 from menu import menu_with_redirect
 import pandas as pd
-from fpdf import FPDF
+from fpdf import FPDF, HTMLMixin
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -58,8 +58,11 @@ def save_prompts_to_excel(prompts, similar_prompts, file_path):
         pd.DataFrame(similar_prompts, columns=["Similar Prompts"]).to_excel(writer, sheet_name='Similar Prompts', index=False)
     return file_path
 
+class PDF(FPDF, HTMLMixin):
+    pass
+
 def save_prompts_to_pdf(prompts, similar_prompts, file_path):
-    pdf = FPDF()
+    pdf = PDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
 
@@ -214,17 +217,27 @@ def main():
                     st.markdown("### Export Options")
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
                         combined_excel_file = save_prompts_to_excel(all_prompts, similar_prompts, tmp.name)
-                    with open(combined_excel_file, "rb") as file:
-                        st.download_button(label="Download Combined Excel", data=file, file_name="combined_prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    with open(combined_excel_file, 'rb') as f:
+                        st.download_button(
+                            label="Download Prompts as Excel",
+                            data=f.read(),
+                            file_name="prompts.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
 
                     with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
                         combined_pdf_file = save_prompts_to_pdf(all_prompts, similar_prompts, tmp.name)
-                    with open(combined_pdf_file, "rb") as file:
-                        st.download_button(label="Download Combined PDF", data=file, file_name="combined_prompts.pdf", mime="application/pdf")
+                    with open(combined_pdf_file, 'rb') as f:
+                        st.download_button(
+                            label="Download Prompts as PDF",
+                            data=f.read(),
+                            file_name="prompts.pdf",
+                            mime="application/pdf"
+                        )
 
                 except Exception as e:
-                    st.error(f"An error occurred: {e}")
-                    st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+                    st.error("An error occurred while processing the image.")
+                    st.error(traceback.format_exc())
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
