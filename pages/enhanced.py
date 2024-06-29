@@ -27,7 +27,7 @@ st.markdown(
     """
     <style>
     .main {
-        background-color: #f0f2f6;
+        background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 99%, #fad0c4 100%);
         color: #2e2e2e;
         display: flex;
         justify-content: center;
