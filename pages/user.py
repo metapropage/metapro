@@ -1,3 +1,172 @@
+import streamlit as st
+import os
+import tempfile
+from PIL import Image
+import google.generativeai as genai
+import iptcinfo3
+import zipfile
+import time
+import traceback
+import re
+import unicodedata
+from datetime import datetime, timedelta
+import pytz
+import json
+from google.oauth2 import service_account
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from menu import menu_with_redirect
+
+st.set_option("client.showSidebarNavigation", False)
+
+# Redirect to app.py if not logged in, otherwise show the navigation menu
+menu_with_redirect()
+
+# Apply custom styling
+st.markdown("""
+    <style>
+        #MainMenu, header, footer {
+            visibility: hidden;
+        }
+        section[data-testid="stSidebar"] {
+            top: 0;
+            height: 10vh;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
+# Hide GitHub logo
+st.markdown(
+    """
+    <style>
+    .css-1jc7ptx, .e1ewe7hr3, .viewerBadge_container__1QSob,
+    .styles_viewerBadge__1yB5_, .viewerBadge_link__1S137,
+    .viewerBadge_text__1JaDK {
+        display: none;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# Set the timezone to UTC+7 Jakarta
+JAKARTA_TZ = pytz.timezone('Asia/Jakarta')
+
+# Initialize session state for license validation
+if 'license_validated' not in st.session_state:
+    st.session_state['license_validated'] = False
+
+if 'upload_count' not in st.session_state:
+    st.session_state['upload_count'] = {
+        'date': None,
+        'count': 0
+    }
+
+if 'api_key' not in st.session_state:
+    st.session_state['api_key'] = None
+
+# Function to normalize and clean text
+def normalize_text(text):
+    normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
+    return normalized
+
+# Function to generate metadata for images using AI model
+def generate_metadata(model, img):
+    caption = model.generate_content(["Generate a descriptive title in English up to 12 words long, identifying the main elements of the image. Describe the primary subjects, objects, activities, and context. Refine the title to include relevant keywords for SEO and ensure it is engaging and informative, but avoid mentioning human names, brand names, product names, or company names.", img])
+    tags = model.generate_content(["Generate up to 45 keywords in English that are relevant to the image (each keyword must be one word, separated by commas). Ensure each keyword is a single word, separated by commas.", img])
+
+    # Filter out undesirable characters from the generated tags
+    filtered_tags = re.sub(r'[^\w\s,]', '', tags.text)
+    
+    # Trim the generated keywords if they exceed 49 words
+    keywords = filtered_tags.split(',')[:49]  # Limit to 49 words
+    trimmed_tags = ','.join(keywords)
+    
+    return {
+        'Title': caption.text.strip(),  # Remove leading/trailing whitespace
+        'Tags': trimmed_tags.strip()
+    }
+
+# Function to embed metadata into images
+def embed_metadata(image_path, metadata, progress_bar, files_processed, total_files):
+    try:
+        # Simulate delay
+        time.sleep(1)
+
+        # Open the image file
+        img = Image.open(image_path)
+
+        # Load existing IPTC data (if any)
+        iptc_data = iptcinfo3.IPTCInfo(image_path, force=True)
+
+        # Clear existing IPTC metadata
+        for tag in iptc_data._data:
+            iptc_data._data[tag] = []
+
+        # Update IPTC data with new metadata
+        iptc_data['keywords'] = [metadata.get('Tags', '')]  # Keywords
+        iptc_data['caption/abstract'] = [metadata.get('Title', '')]  # Title
+
+        # Save the image with the embedded metadata
+        iptc_data.save()
+
+        # Update progress bar
+        files_processed += 1
+        progress_bar.progress(files_processed / total_files)
+        progress_bar.text(f"Embedding metadata for image {files_processed}/{total_files}")
+
+        # Return the updated image path for further processing
+        return image_path
+
+    except Exception as e:
+        st.error(f"An error occurred while embedding metadata: {e}")
+        st.error(traceback.format_exc())  # Print detailed error traceback for debugging
+
+def zip_processed_images(image_paths):
+    try:
+        zip_file_path = os.path.join(tempfile.gettempdir(), 'processed_images.zip')
+
+        with zipfile.ZipFile(zip_file_path, 'w') as zipf:
+            for image_path in image_paths:
+                zipf.write(image_path, arcname=os.path.basename(image_path))
+
+        return zip_file_path
+
+    except Exception as e:
+        st.error(f"An error occurred while zipping images: {e}")
+        st.error(traceback.format_exc())
+        return None
+
+def upload_to_drive(zip_file_path, credentials):
+    try:
+        service = build('drive', 'v3', credentials=credentials)
+        file_metadata = {
+            'name': os.path.basename(zip_file_path),
+            'mimeType': 'application/zip'
+        }
+        media = MediaFileUpload(zip_file_path, mimetype='application/zip', resumable=True)
+        file = service.files().create(body=file_metadata, media_body=media, fields='id,webViewLink').execute()
+
+        # Make the file publicly accessible
+        service.permissions().create(
+            fileId=file['id'],
+            body={'type': 'anyone', 'role': 'reader'}
+        ).execute()
+
+        return file.get('webViewLink')
+    except Exception as e:
+        st.error(f"An error occurred while uploading to Google Drive: {e}")
+        st.error(traceback.format_exc())
+        return None
+
+def generate_description(model, img):
+    description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
+    return description.text.strip()
+
+def format_midjourney_prompt(description):
+    prompt_text = f"{description} -ar 16:9"
+    return prompt_text
+
 def main():
     """Main function for the Streamlit app."""
 
