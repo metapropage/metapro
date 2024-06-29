@@ -1,6 +1,10 @@
 import streamlit as st
 from menu import menu_with_redirect
 
+# Set the page configuration first
+st.set_page_config(page_title="Coming Soon..", page_icon="🔜")
+
+# Disable sidebar navigation
 st.set_option("client.showSidebarNavigation", False)
 
 # Redirect to app.py if not logged in, otherwise show the navigation menu
@@ -18,8 +22,6 @@ st.markdown("""
         }
     </style>
     """, unsafe_allow_html=True)
-
-st.set_page_config(page_title="Coming Soon..", page_icon="🔜")
 
 st.markdown(
     """
