@@ -4,7 +4,7 @@ import streamlit as st
 def authenticated_menu():
     # Show a navigation menu for authenticated users
     st.sidebar.page_link("app.py", label="Home", icon="🏠")
-    st.sidebar.page_link("pages/gdrive.py", label="Upload via Gdrive", icon="🌐")
+    st.sidebar.page_link("pages/gdrive.py", label="Upload via Gdrive", icon="🌍")
     st.sidebar.page_link("pages/sftp.py", label="Upload via SFTP", icon="🚀")
     st.sidebar.page_link("pages/prompts.py", label="Magic Prompts", icon="✨")
     st.sidebar.page_link("pages/enhanced.py", label="Enhanced Images", icon="🖼️")
