@@ -1,3 +1,4 @@
+
 import streamlit as st
 
 # Assuming the menu function is defined in a module named 'menu'
@@ -16,6 +17,10 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# Predefined username and password (for demonstration purposes)
+USERNAME = "meta"
+PASSWORD = "bismillah"
+
 # Initialize st.session_state variables
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -28,8 +33,7 @@ if "rerun" not in st.session_state:
 
 # Authentication function
 def authenticate(username, password):
-    # Use secrets for username and password
-    if username == st.secrets["meta"] and password == st.secrets["bismillah"]:
+    if username == USERNAME and password == PASSWORD:
         st.session_state.authenticated = True
         st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
         st.session_state.rerun = True
