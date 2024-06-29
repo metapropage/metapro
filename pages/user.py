@@ -230,7 +230,7 @@ def main():
             st.session_state['api_key'] = api_key
 
         # Upload image files
-        uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG Supported, Maximum 20 Files)', accept_multiple_files=True)
+        uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG Supported, Maximum 45 Files)', accept_multiple_files=True)
 
         if uploaded_files:
             valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
@@ -241,9 +241,9 @@ def main():
 
             total_files_to_upload = len(valid_files)
 
-            # Check if the total files exceed 20
-            if total_files_to_upload > 20:
-                st.error("You can only upload up to 20 files at a time.")
+            # Check if the total files exceed 45
+            if total_files_to_upload > 45:
+                st.error("You can only upload up to 45 files at a time.")
                 return
 
             if total_files_to_upload > 0:
