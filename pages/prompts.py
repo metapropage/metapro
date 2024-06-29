@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 import pytz
 from menu import menu_with_redirect
 import pandas as pd
+from fpdf import FPDF
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -55,6 +56,23 @@ def save_prompts_to_excel(prompts, similar_prompts, file_path):
     with pd.ExcelWriter(file_path, engine='xlsxwriter') as writer:
         pd.DataFrame(prompts, columns=["Prompts"]).to_excel(writer, sheet_name='Prompts', index=False)
         pd.DataFrame(similar_prompts, columns=["Similar Prompts"]).to_excel(writer, sheet_name='Similar Prompts', index=False)
+    return file_path
+
+def save_prompts_to_pdf(prompts, similar_prompts, file_path):
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+
+    pdf.cell(200, 10, txt="Prompts", ln=True, align="C")
+    for prompt in prompts:
+        pdf.multi_cell(0, 10, txt=prompt)
+
+    pdf.add_page()
+    pdf.cell(200, 10, txt="Similar Prompts", ln=True, align="C")
+    for prompt in similar_prompts:
+        pdf.multi_cell(0, 10, txt=prompt)
+
+    pdf.output(file_path)
     return file_path
 
 def main():
@@ -198,6 +216,11 @@ def main():
                         combined_excel_file = save_prompts_to_excel(all_prompts, similar_prompts, tmp.name)
                     with open(combined_excel_file, "rb") as file:
                         st.download_button(label="Download Combined Excel", data=file, file_name="combined_prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                        combined_pdf_file = save_prompts_to_pdf(all_prompts, similar_prompts, tmp.name)
+                    with open(combined_pdf_file, "rb") as file:
+                        st.download_button(label="Download Combined PDF", data=file, file_name="combined_prompts.pdf", mime="application/pdf")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
