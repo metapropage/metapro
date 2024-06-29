@@ -7,7 +7,7 @@ def authenticated_menu():
     st.sidebar.page_link("pages/gdrive.py", label="Upload via Gdrive", icon="🌐")
     st.sidebar.page_link("pages/sftp.py", label="Upload via SFTP", icon="🚀")
     st.sidebar.page_link("pages/prompts.py", label="Magic Prompts", icon="✨")
-    st.sidebar.page_link("pages/enhanced.py", label="Enhanced Images", icon="🌐")
+    st.sidebar.page_link("pages/enhanced.py", label="Enhanced Images", icon="🖼️")
     
 
 def unauthenticated_menu():
