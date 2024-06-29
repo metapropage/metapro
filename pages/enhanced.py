@@ -1,4 +1,23 @@
 import streamlit as st
+from menu import menu_with_redirect
+
+st.set_option("client.showSidebarNavigation", False)
+
+# Redirect to app.py if not logged in, otherwise show the navigation menu
+menu_with_redirect()
+
+# Apply custom styling
+st.markdown("""
+    <style>
+        #MainMenu, header, footer {
+            visibility: hidden;
+        }
+        section[data-testid="stSidebar"] {
+            top: 0;
+            height: 10vh;
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 st.set_page_config(page_title="Coming Soon..", page_icon="🔜")
 
