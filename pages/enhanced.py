@@ -2,7 +2,7 @@ import streamlit as st
 from menu import menu_with_redirect
 
 # Set the page configuration first
-st.set_page_config(page_title="Coming Soon..", page_icon="🔜")
+st.set_page_config(page_title="MetaPro", page_icon="🪐")
 
 # Disable sidebar navigation
 st.set_option("client.showSidebarNavigation", False)
