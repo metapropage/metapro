@@ -6,7 +6,7 @@ st.markdown(
     """
     <style>
     .main {
-        background-color: #87CEEB; /* Sky blue color */
+        background-color: #f0f2f6;
         color: #2e2e2e;
         display: flex;
         justify-content: center;
