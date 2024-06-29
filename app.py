@@ -17,8 +17,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # Predefined username and password (for demonstration purposes)
-USERNAME = "admin"
-PASSWORD = "dian"
+USERNAME = "user"
+PASSWORD = "metapro"
 
 # Initialize st.session_state variables
 if "authenticated" not in st.session_state:
