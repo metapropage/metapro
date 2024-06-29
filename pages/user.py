@@ -88,7 +88,7 @@ def generate_metadata(model, img):
     }
 
 # Function to embed metadata into images
-def embed_metadata(image_path, metadata):
+def embed_metadata(image_path, metadata, progress_bar, files_processed, total_files):
     try:
         # Simulate delay
         time.sleep(1)
@@ -110,6 +110,12 @@ def embed_metadata(image_path, metadata):
         # Save the image with the embedded metadata
         iptc_data.save()
 
+        # Update progress bar
+        files_processed += 1
+        progress_bar.progress(files_processed / total_files)
+        progress_bar.text(f"Embedding metadata for image {files_processed}/{total_files}")
+
+        # Return the updated image path for further processing
         return image_path
 
     except Exception as e:
@@ -282,7 +288,7 @@ def main():
                                 try:
                                     img = Image.open(image_path)
                                     metadata = generate_metadata(model, img)
-                                    updated_image_path = embed_metadata(image_path, metadata)
+                                    updated_image_path = embed_metadata(image_path, metadata, progress_bar, files_processed, total_files)
                                     if updated_image_path:
                                         processed_image_paths.append(updated_image_path)
                                         files_processed += 1
@@ -308,6 +314,6 @@ def main():
                     except Exception as e:
                         st.error(f"An error occurred: {e}")
                         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
-                        
+
 if __name__ == '__main__':
     main()
