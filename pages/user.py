@@ -88,7 +88,7 @@ def generate_metadata(model, img):
     }
 
 # Function to embed metadata into images
-def embed_metadata(image_path, metadata, progress_bar, files_processed, total_files):
+def embed_metadata(image_path, metadata):
     try:
         # Simulate delay
         time.sleep(1)
@@ -110,12 +110,6 @@ def embed_metadata(image_path, metadata, progress_bar, files_processed, total_fi
         # Save the image with the embedded metadata
         iptc_data.save()
 
-        # Update progress bar
-        files_processed += 1
-        progress_bar.progress(files_processed / total_files)
-        progress_bar.text(f"Embedding metadata for image {files_processed}/{total_files}")
-
-        # Return the updated image path for further processing
         return image_path
 
     except Exception as e:
@@ -233,6 +227,10 @@ def main():
         uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG Supported)', accept_multiple_files=True)
 
         if uploaded_files:
+            if len(uploaded_files) > 45:
+                st.warning("You can only upload up to 45 files per upload. Only the first 45 files will be processed.")
+                uploaded_files = uploaded_files[:45]
+
             valid_files = [file for file in uploaded_files if file.type in ['image/jpeg', 'image/jpg']]
             invalid_files = [file for file in uploaded_files if file not in valid_files]
 
@@ -248,15 +246,15 @@ def main():
                                 'date': current_date.date(),
                                 'count': 0
                             }
-                        
+
                         # Check if remaining uploads are available
-                        if st.session_state['upload_count']['count'] + len(valid_files) > 1000000:
-                            remaining_uploads = 1000000 - st.session_state['upload_count']['count']
+                        if st.session_state['upload_count']['count'] + len(valid_files) > 1000:
+                            remaining_uploads = 1000 - st.session_state['upload_count']['count']
                             st.warning(f"You have exceeded the upload limit. Remaining uploads for today: {remaining_uploads}")
                             return
                         else:
                             st.session_state['upload_count']['count'] += len(valid_files)
-                            st.success(f"Uploads successful. Remaining uploads for today: {1000000 - st.session_state['upload_count']['count']}")
+                            st.success(f"Uploads successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
 
                         genai.configure(api_key=api_key)  # Configure AI model with API key
                         model = genai.GenerativeModel('gemini-pro-vision')
@@ -272,37 +270,31 @@ def main():
                                 image_paths.append(temp_image_path)
 
                             # Process each image and generate titles and tags using AI
-                            metadata_list = []
+                            processed_image_paths = []
                             process_placeholder = st.empty()
-                            for i, image_path in enumerate(image_paths):
-                                process_placeholder.text(f"Processing Generate Titles and Tags {i + 1}/{len(image_paths)}")
-                                try:
-                                    img = Image.open(image_path)
-                                    metadata = generate_metadata(model, img)
-                                    metadata_list.append(metadata)
-                                except Exception as e:
-                                    st.error(f"An error occurred while generating metadata for {os.path.basename(image_path)}: {e}")
-                                    st.error(traceback.format_exc())
-                                    continue
-
-                            # Embed metadata into images
+                            progress_placeholder = st.empty()
+                            progress_bar = progress_placeholder.progress(0)
                             total_files = len(image_paths)
                             files_processed = 0
 
-                            # Display the progress bar and current file number
-                            progress_placeholder = st.empty()
-                            progress_bar = progress_placeholder.progress(0)
-                            progress_placeholder.text(f"Processing images 0/{total_files}")
-
-                            processed_image_paths = []
-                            for i, (image_path, metadata) in enumerate(zip(image_paths, metadata_list)):
-                                process_placeholder.text(f"Embedding metadata for image {i + 1}/{len(image_paths)}")
-                                updated_image_path = embed_metadata(image_path, metadata, progress_bar, files_processed, total_files)
-                                if updated_image_path:
-                                    processed_image_paths.append(updated_image_path)
-                                    files_processed += 1
-                                    # Update progress bar and current file number
-                                    progress_bar.progress(files_processed / total_files)
+                            for i, image_path in enumerate(image_paths):
+                                process_placeholder.text(f"Processing and embedding metadata for image {i + 1}/{total_files}")
+                                try:
+                                    img = Image.open(image_path)
+                                    metadata = generate_metadata(model, img)
+                                    # Rename the file based on the generated title
+                                    new_image_path = os.path.join(temp_dir, f"{normalize_text(metadata['Title'])}.jpg")
+                                    os.rename(image_path, new_image_path)
+                                    updated_image_path = embed_metadata(new_image_path, metadata)
+                                    if updated_image_path:
+                                        processed_image_paths.append(updated_image_path)
+                                        files_processed += 1
+                                        # Update progress bar and current file number
+                                        progress_bar.progress(files_processed / total_files)
+                                except Exception as e:
+                                    st.error(f"An error occurred while processing {os.path.basename(image_path)}: {e}")
+                                    st.error(traceback.format_exc())
+                                    continue
 
                             # Zip processed images
                             zip_file_path = zip_processed_images(processed_image_paths)
