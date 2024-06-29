@@ -51,9 +51,10 @@ def generate_description(model, img, prompt_template, num_prompts):
     description = model.generate_content([f"{prompt_template} {num_prompts} prompts.", img])
     return description.text.strip()
 
-def save_prompts_to_excel(prompts, file_path):
-    df = pd.DataFrame(prompts, columns=["Prompts"])
-    df.to_excel(file_path, index=False)
+def save_prompts_to_excel(prompts, similar_prompts, file_path):
+    with pd.ExcelWriter(file_path, engine='xlsxwriter') as writer:
+        pd.DataFrame(prompts, columns=["Prompts"]).to_excel(writer, sheet_name='Prompts', index=False)
+        pd.DataFrame(similar_prompts, columns=["Similar Prompts"]).to_excel(writer, sheet_name='Similar Prompts', index=False)
     return file_path
 
 def main():
@@ -193,17 +194,10 @@ def main():
 
                     # Export options
                     st.markdown("### Export Options")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-                            excel_file = save_prompts_to_excel(all_prompts, tmp.name)
-                        with open(excel_file, "rb") as file:
-                            st.download_button(label="Download Prompts", data=file, file_name="prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                    with col2:
-                        with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
-                            similar_excel_file = save_prompts_to_excel(similar_prompts, tmp.name)
-                        with open(similar_excel_file, "rb") as file:
-                            st.download_button(label="Download Similar Prompts", data=file, file_name="similar_prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx") as tmp:
+                        combined_excel_file = save_prompts_to_excel(all_prompts, similar_prompts, tmp.name)
+                    with open(combined_excel_file, "rb") as file:
+                        st.download_button(label="Download Combined Excel", data=file, file_name="combined_prompts.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
                 except Exception as e:
                     st.error(f"An error occurred: {e}")
