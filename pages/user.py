@@ -239,6 +239,11 @@ def main():
             if invalid_files:
                 st.error("Only JPG and JPEG files are supported.")
 
+            total_files_to_upload = len(valid_files)
+
+            if total_files_to_upload > 0:
+                st.info(f"Total number of valid files to be uploaded: {total_files_to_upload}")
+
             if valid_files and st.button("Process"):
                 with st.spinner("Processing..."):
                     try:
