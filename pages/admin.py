@@ -92,15 +92,6 @@ def embed_metadata(image_path, metadata, progress_bar, files_processed, total_fi
         st.error(f"An error occurred while embedding metadata: {e}")
         st.error(traceback.format_exc())  # Print detailed error traceback for debugging
 
-def rename_file(image_path, title):
-    directory, original_filename = os.path.split(image_path)
-    clean_title = re.sub(r'[^\w\s]', '', title)  # Remove special characters
-    clean_title = re.sub(r'\s+', '_', clean_title)  # Replace spaces with underscores
-    new_filename = f"{clean_title}.jpg"
-    new_image_path = os.path.join(directory, new_filename)
-    os.rename(image_path, new_image_path)
-    return new_image_path
-
 def sftp_upload(image_path, sftp_username, sftp_password, progress_placeholder, files_processed, total_files):
     # SFTP connection details
     sftp_host = "sftp.contributor.adobestock.com"
@@ -214,6 +205,14 @@ def main():
         # SFTP Password input
         sftp_password = st.text_input('SFTP Password', type='password')
 
+        # Commented out the Title and tags prompts input
+        # title_prompt = st.text_area('Title Prompt', value=st.session_state['title_prompt'], height=100)
+        # tags_prompt = st.text_area('Tags Prompt', value=st.session_state['tags_prompt'], height=100)
+
+        # Save prompts in session state
+        # st.session_state['title_prompt'] = title_prompt
+        # st.session_state['tags_prompt'] = tags_prompt
+
         # Upload image files
         uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG Supported)', accept_multiple_files=True)
 
@@ -276,14 +275,11 @@ def main():
                                     # Embed metadata
                                     updated_image_path = embed_metadata(image_path, metadata, embed_progress_placeholder, files_processed, total_files)
                                     
-                                    # Rename the file according to the generated title
-                                    new_image_path = rename_file(updated_image_path, metadata['Title'])
-
                                     # Delay before uploading via SFTP
                                     time.sleep(1)
                                     # Upload via SFTP
-                                    if new_image_path:
-                                        sftp_upload(new_image_path, sftp_username, sftp_password, upload_progress_placeholder, files_processed, total_files)
+                                    if updated_image_path:
+                                        sftp_upload(updated_image_path, sftp_username, sftp_password, upload_progress_placeholder, files_processed, total_files)
                                         files_processed += 1
 
                                 except Exception as e:
@@ -299,4 +295,3 @@ def main():
 
 if __name__ == '__main__':
     main()
- 
