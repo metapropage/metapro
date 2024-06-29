@@ -195,7 +195,7 @@ def main():
                                 all_prompts.extend(prompts)
 
                                 # Generate similar prompts
-                                similar_prompt_template = 'Create similar prompts based on the image. Ensure the prompts result in popular images on photostock, especially on Adobe Stock.'
+                                similar_prompt_template = 'Create similar prompts based on the image. Ensure the prompts lead to popular images on photostock, particularly on Adobe Stock, but make sure they remain similar in concept to those images.'
                                 similar_description = generate_description(model, img, similar_prompt_template, num_similar_prompts)
                                 similar_prompts_list = [f"{prompt.strip()} {additional_text}" for prompt in similar_description.split("\n") if prompt.strip()]
                                 similar_prompts.extend(similar_prompts_list)
