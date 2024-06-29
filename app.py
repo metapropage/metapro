@@ -16,10 +16,6 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# Predefined username and password (for demonstration purposes)
-USERNAME = "meta"
-PASSWORD = "bismillah"
-
 # Initialize st.session_state variables
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -32,7 +28,7 @@ if "rerun" not in st.session_state:
 
 # Authentication function
 def authenticate(username, password):
-    if username == USERNAME and password == PASSWORD:
+    if username == st.secrets["USERNAME"] and password == st.secrets["PASSWORD"]:
         st.session_state.authenticated = True
         st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
         st.session_state.rerun = True
