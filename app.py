@@ -28,6 +28,7 @@ if "rerun" not in st.session_state:
 
 # Authentication function
 def authenticate(username, password):
+    # Use secrets for username and password
     if username == st.secrets["USERNAME"] and password == st.secrets["PASSWORD"]:
         st.session_state.authenticated = True
         st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
