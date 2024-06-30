@@ -145,6 +145,14 @@ def upload_to_drive(zip_file_path, credentials):
         st.error(traceback.format_exc())
         return None
 
+def generate_description(model, img):
+    description = model.generate_content(["Generate very detailed descriptive description for stock photo related to (Concept). dont use words : The photo shows ", img])
+    return description.text.strip()
+
+def format_midjourney_prompt(description):
+    prompt_text = f"{description} -ar 16:9"
+    return prompt_text
+
 def main():
     """Main function for the Streamlit app."""
 
@@ -286,6 +294,8 @@ def main():
                             zip_file_path = zip_processed_images(processed_image_paths)
 
                             if zip_file_path:
+                                st.success(f"Successfully zipped processed {zip_file_path}")
+
                                 # Upload zip file to Google Drive and get the shareable link
                                 credentials = service_account.Credentials.from_service_account_file('credentials.json', scopes=['https://www.googleapis.com/auth/drive.file'])
                                 drive_link = upload_to_drive(zip_file_path, credentials)
