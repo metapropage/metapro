@@ -1,3 +1,5 @@
+
+
 import streamlit as st
 import os
 import tempfile
@@ -64,20 +66,6 @@ if 'upload_count' not in st.session_state:
 
 if 'api_key' not in st.session_state:
     st.session_state['api_key'] = None
-
-# Pre-defined API keys
-API_KEYS = [
-    "AIzaSyD6VJhKmpuFbv8Wm5ym0DnbFHrP0yI6miA",
-    "AIzaSyD6VJhKmpuFbv8Wm5ym0DnbFHrP0yI6miA",
-    "api_key_3",
-    "api_key_4",
-    "api_key_5",
-    "api_key_6",
-    "api_key_7",
-    "api_key_8",
-    "api_key_9",
-    "api_key_10",
-]
 
 # Function to normalize and clean text
 def normalize_text(text):
@@ -166,7 +154,7 @@ def upload_to_drive(zip_file_path, credentials):
         st.error(f"An error occurred while uploading to Google Drive: {e}")
         st.error(traceback.format_exc())
         return None
-
+        
 def main():
     """Main function for the Streamlit app."""
 
@@ -222,10 +210,8 @@ def main():
             days_remaining = (expiration_date - current_date).days
             st.success(f"License valid. You have {days_remaining} days remaining. Max 45 files per upload, unlimited daily uploads.")
 
-        # API Key dropdown and input
-        api_key = st.selectbox('Select an API Key or enter manually', options=['Enter manually'] + API_KEYS, index=0)
-        if api_key == 'Enter manually':
-            api_key = st.text_input('Enter your [API](https://makersuite.google.com/app/apikey) Key', value=st.session_state['api_key'] or '')
+        # API Key input
+        api_key = st.text_input('Enter your [API](https://makersuite.google.com/app/apikey) Key', value=st.session_state['api_key'] or '')
 
         # Save API key in session state
         if api_key:
@@ -322,4 +308,3 @@ def main():
 
 if __name__ == '__main__':
     main()
- 
