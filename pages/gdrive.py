@@ -68,7 +68,7 @@ if 'api_key' not in st.session_state:
 # Pre-defined API keys
 API_KEYS = [
     "AIzaSyD6VJhKmpuFbv8Wm5ym0DnbFHrP0yI6miA",
-    "api_key_2",
+    "AIzaSyD6VJhKmpuFbv8Wm5ym0DnbFHrP0yI6miA",
     "api_key_3",
     "api_key_4",
     "api_key_5",
