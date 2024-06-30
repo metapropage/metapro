@@ -62,8 +62,22 @@ if 'upload_count' not in st.session_state:
         'count': 0
     }
 
-if 'api_keys' not in st.session_state:
-    st.session_state['api_keys'] = []
+if 'api_key' not in st.session_state:
+    st.session_state['api_key'] = None
+
+# Pre-defined API keys
+API_KEYS = [
+    "api_key_1",
+    "api_key_2",
+    "api_key_3",
+    "api_key_4",
+    "api_key_5",
+    "api_key_6",
+    "api_key_7",
+    "api_key_8",
+    "api_key_9",
+    "api_key_10",
+]
 
 # Function to normalize and clean text
 def normalize_text(text):
@@ -152,7 +166,7 @@ def upload_to_drive(zip_file_path, credentials):
         st.error(f"An error occurred while uploading to Google Drive: {e}")
         st.error(traceback.format_exc())
         return None
-        
+
 def main():
     """Main function for the Streamlit app."""
 
@@ -208,17 +222,14 @@ def main():
             days_remaining = (expiration_date - current_date).days
             st.success(f"License valid. You have {days_remaining} days remaining. Max 45 files per upload, unlimited daily uploads.")
 
-        # API Key management
-        new_api_key = st.text_input('Enter a new [API](https://makersuite.google.com/app/apikey) Key', key='new_api_key')
-        if new_api_key and st.button('Add API Key'):
-            st.session_state['api_keys'].append(new_api_key)
-            st.success('API Key added!')
+        # API Key dropdown and input
+        api_key = st.selectbox('Select an API Key or enter manually', options=['Enter manually'] + API_KEYS, index=0)
+        if api_key == 'Enter manually':
+            api_key = st.text_input('Enter your [API](https://makersuite.google.com/app/apikey) Key', value=st.session_state['api_key'] or '')
 
-        if st.session_state['api_keys']:
-            selected_api_key = st.selectbox('Select an API Key', st.session_state['api_keys'], key='selected_api_key')
-            st.session_state['api_key'] = selected_api_key
-        else:
-            st.warning('Please add an API Key to proceed.')
+        # Save API key in session state
+        if api_key:
+            st.session_state['api_key'] = api_key
 
         # Upload image files
         uploaded_files = st.file_uploader('Upload Images (Only JPG and JPEG Supported)', accept_multiple_files=True)
@@ -253,7 +264,7 @@ def main():
                             st.session_state['upload_count']['count'] += len(valid_files)
                             st.success(f"Uploads successful. Remaining uploads for today: {1000000 - st.session_state['upload_count']['count']}")
 
-                        genai.configure(api_key=st.session_state['api_key'])  # Configure AI model with selected API key
+                        genai.configure(api_key=api_key)  # Configure AI model with API key
                         model = genai.GenerativeModel('gemini-pro-vision')
 
                         # Create a temporary directory to store the uploaded images
