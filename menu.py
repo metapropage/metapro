@@ -1,6 +1,5 @@
 import streamlit as st
 
-
 def authenticated_menu():
     # Show a navigation menu for authenticated users
     st.sidebar.page_link("app.py", label="Home", icon="🏠")
@@ -8,11 +7,17 @@ def authenticated_menu():
     st.sidebar.page_link("pages/sftp.py", label="Upload via SFTP", icon="🚀")
     st.sidebar.page_link("pages/prompts.py", label="Magic Prompts", icon="✨")
     st.sidebar.page_link("pages/enhanced.py", label="Enhanced Images", icon="🖼️")
+
+    # Add dropdown list at the bottom of the sidebar
+    st.sidebar.selectbox("Select an option", ["text1", "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10"])
     
 
 def unauthenticated_menu():
     # Show a navigation menu for unauthenticated users
     st.sidebar.page_link("app.py", label="Log in", icon="🔒")
+
+    # Add dropdown list at the bottom of the sidebar
+    st.sidebar.selectbox("Select an option", ["text1", "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10"])
 
 
 def menu():
@@ -31,3 +36,5 @@ def menu_with_redirect():
         st.switch_page("app.py")
     menu()
 
+# Call the menu_with_redirect function
+menu_with_redirect()
