@@ -1,40 +1,53 @@
 import streamlit as st
 
-def authenticated_menu():
-    # Show a navigation menu for authenticated users
-    st.sidebar.page_link("app.py", label="Home", icon="🏠")
-    st.sidebar.page_link("pages/gdrive.py", label="Upload via Gdrive", icon="🌍")
-    st.sidebar.page_link("pages/sftp.py", label="Upload via SFTP", icon="🚀")
-    st.sidebar.page_link("pages/prompts.py", label="Magic Prompts", icon="✨")
-    st.sidebar.page_link("pages/enhanced.py", label="Enhanced Images", icon="🖼️")
-
-    # Add dropdown list at the bottom of the sidebar
-    st.sidebar.selectbox("Select an option", ["text1", "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10"])
-    
-
-def unauthenticated_menu():
-    # Show a navigation menu for unauthenticated users
-    st.sidebar.page_link("app.py", label="Log in", icon="🔒")
-
-    # Add dropdown list at the bottom of the sidebar
-    st.sidebar.selectbox("Select an option", ["text1", "text2", "text3", "text4", "text5", "text6", "text7", "text8", "text9", "text10"])
-
-
 def menu():
-    # Determine if a user is logged in or not, then show the correct
-    # navigation menu
-    if "role" not in st.session_state or st.session_state.role is None:
-        unauthenticated_menu()
-        return
-    authenticated_menu()
+    st.sidebar.title("Navigation")
 
+    # Use session state to keep track of the current page
+    if "page" not in st.session_state:
+        st.session_state.page = "Page 1"
 
-def menu_with_redirect():
-    # Redirect users to the main page if not logged in, otherwise continue to
-    # render the navigation menu
-    if "role" not in st.session_state or st.session_state.role is None:
-        st.switch_page("app.py")
-    menu()
+    # Custom CSS for styling the buttons
+    st.markdown("""
+        <style>
+        .sidebar-button {
+            background-color: #4CAF50; /* Green */
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            transition-duration: 0.4s;
+            cursor: pointer;
+            width: 100%;
+        }
 
-# Call the menu_with_redirect function
-menu_with_redirect()
+        .sidebar-button:hover {
+            background-color: white; 
+            color: black; 
+            border: 2px solid #4CAF50;
+        }
+
+        .spacing {
+            margin-top: 20px;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
+    # Render buttons in the sidebar
+    if st.sidebar.button("Page 1", key="page1", help="Go to Page 1"):
+        st.session_state.page = "Page 1"
+    st.sidebar.markdown('<div class="spacing"></div>', unsafe_allow_html=True)  # Add space between buttons
+    if st.sidebar.button("Page 2", key="page2", help="Go to Page 2"):
+        st.session_state.page = "Page 2"
+
+    # Display the selected page
+    if st.session_state.page == "Page 1":
+        import pages.page1 as page1
+        page1.show()
+    elif st.session_state.page == "Page 2":
+        import pages.page2 as page2
+        page2.show()
