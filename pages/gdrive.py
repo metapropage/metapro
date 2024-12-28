@@ -55,9 +55,6 @@ if 'api_key' not in st.session_state:
 def normalize_text(text):
     normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
     return normalized
-    
-# Initialize the generative model
-model = genai.GenerativeModel('gemini-1.5-flash')
 
 # Function to generate metadata for images using AI model
 def generate_metadata(model, img):
@@ -240,7 +237,7 @@ def main():
                             st.success(f"Uploads successful. Remaining uploads for today: {1000 - st.session_state['upload_count']['count']}")
 
                         genai.configure(api_key=api_key)  # Configure AI model with API key
-                        model = genai.GenerativeModel('gemini-pro-vision')
+                        model = genai.GenerativeModel('gemini-1.5-flash')
 
                         # Create a temporary directory to store the uploaded images
                         with tempfile.TemporaryDirectory() as temp_dir:
