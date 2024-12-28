@@ -55,6 +55,9 @@ if 'api_key' not in st.session_state:
 def normalize_text(text):
     normalized = unicodedata.normalize('NFKD', text).encode('ascii', 'ignore').decode('utf-8')
     return normalized
+    
+# Initialize the generative model
+model = genai.GenerativeModel('gemini-1.5-flash')
 
 # Function to generate metadata for images using AI model
 def generate_metadata(model, img):
