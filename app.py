@@ -19,15 +19,12 @@ st.markdown("""
 USERNAME = "a"
 PASSWORD = "a"
 
-# Initialize st.session_state variables
+# Initialize session state variables
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if "role" not in st.session_state:
     st.session_state.role = None
-
-if "rerun" not in st.session_state:
-    st.session_state.rerun = False
 
 # Authentication function
 def authenticate(username, password):
@@ -35,7 +32,6 @@ def authenticate(username, password):
         st.session_state.authenticated = True
         st.session_state.role = "super-admin"  # Directly set the role to "super-admin"
         set_lock("logged_in")
-        st.session_state.rerun = True
     else:
         st.error("Incorrect username or password")
 
@@ -54,6 +50,21 @@ def set_lock(status):
     with open(lock_file, 'w') as file:
         file.write(status)
 
+# Main logic
+if not st.session_state.authenticated:
+    st.title("Login")
+    if check_lock():
+        st.error("Another user is currently logged in. Please try again later.")
+    else:
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        if st.button("Login"):
+            authenticate(username, password)
+            if st.session_state.authenticated:
+                st.experimental_rerun()  # Rerun to redirect to the menu page
+
+# If authenticated, show the menu
+if st.session_state.authenticated:
     menu()  # Render the dynamic menu
 
     # Logout button in the sidebar
@@ -62,5 +73,10 @@ def set_lock(status):
         st.session_state.role = None
         set_lock("")
         st.success("Logged out successfully.")
+        st.experimental_rerun()
 
-    
+    # Additional Information
+    st.markdown("### Why Choose MetaPro?")
+    st.markdown("""
+    **AI-Powered Precision:** Leverage the power of Google Generative AI to automatically...
+    """)
