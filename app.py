@@ -54,23 +54,6 @@ def set_lock(status):
     with open(lock_file, 'w') as file:
         file.write(status)
 
-# If the user is not authenticated, show the login form
-if not st.session_state.authenticated:
-    st.title("Login")
-    if check_lock():
-        st.error("Another user is currently logged in. Please try again later.")
-    else:
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        if st.button("Login"):
-            authenticate(username, password)
-
-# If authenticated, show the menu and additional information
-if st.session_state.authenticated:
-    if st.session_state.rerun:
-        st.session_state.rerun = False
-        st.rerun()
-
     menu()  # Render the dynamic menu
 
     # Logout button in the sidebar
@@ -80,8 +63,4 @@ if st.session_state.authenticated:
         set_lock("")
         st.success("Logged out successfully.")
 
-    # Additional Information
-    st.markdown("### Why Choose MetaPro?")
-    st.markdown("""
-    **AI-Powered Precision:** Leverage the power of Google Generative AI to automatically...
-    """)
+    
