@@ -14,7 +14,7 @@ st.markdown("""
             height: 10vh;
         }
     </style>
-    """, unsafe_allow_html=True)
+    """, unsafe_allow_html=False)
 
 # Predefined username and password (for demonstration purposes)
 USERNAME = "a"
