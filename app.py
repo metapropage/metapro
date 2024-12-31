@@ -20,16 +20,6 @@ st.markdown("""
 USERNAME = "a"
 PASSWORD = "a"
 
-# Initialize st.session_state variables
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
-
-if "role" not in st.session_state:
-    st.session_state.role = None
-
-if "rerun" not in st.session_state:
-    st.session_state.rerun = False
-
 # Authentication function
 def authenticate(username, password):
     if username == USERNAME and password == PASSWORD:
@@ -40,36 +30,11 @@ def authenticate(username, password):
     else:
         st.error("Incorrect username or password")
 
-# Function to check the lock file
-def check_lock():
-    lock_file = "lock.txt"
-    if os.path.exists(lock_file):
-        with open(lock_file, 'r') as file:
-            status = file.read()
-        return status == "logged_in"
-    return False
-
-# Function to set lock file
-def set_lock(status):
-    lock_file = "lock.txt"
-    with open(lock_file, 'w') as file:
-        file.write(status)
-
-# If the user is not authenticated, show the login form
-if not st.session_state.authenticated:
-    st.title("Login")
-    if check_lock():
-        st.error("Another user is currently logged in. Please try again later.")
-    else:
-        username = st.text_input("Username")
-        password = st.text_input("Password", type="password")
-        if st.button("Login"):
-            authenticate(username, password)
 
 # If authenticated, show the menu and additional information
 if st.session_state.authenticated:
     if st.session_state.rerun:
-        st.session_state.rerun = False
+        st.session_state.rerun = True
         st.rerun()
 
     menu()  # Render the dynamic menu
