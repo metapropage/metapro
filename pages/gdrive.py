@@ -1,17 +1,17 @@
-import streamlit as st
+from PIL import Image
 import os
 import tempfile
+import streamlit as st
+import traceback
+from datetime import datetime, timedelta
+import pytz
+import re
+import unicodedata
+import zipfile
+import time
 from PIL import Image
 import google.generativeai as genai
 import iptcinfo3
-import zipfile
-import time
-import traceback
-import re
-import unicodedata
-from datetime import datetime, timedelta
-import pytz
-import json
 
 st.set_option("client.showSidebarNavigation", False)
 
@@ -227,13 +227,28 @@ def main():
 
                         # Create a temporary directory to store the uploaded images
                         with tempfile.TemporaryDirectory() as temp_dir:
-                            # Save the uploaded images to the temporary directory
+                            # Save and convert the uploaded images to JPEG in the temporary directory
                             image_paths = []
+
                             for file in valid_files:
-                                temp_image_path = os.path.join(temp_dir, file.name)
-                                with open(temp_image_path, 'wb') as f:
-                                    f.write(file.read())
-                                image_paths.append(temp_image_path)
+                                try:
+                                    # Save the uploaded file temporarily
+                                    temp_image_path = os.path.join(temp_dir, file.name)
+                                    with open(temp_image_path, 'wb') as f:
+                                        f.write(file.read())
+
+                                    # Open the image and convert to JPEG
+                                    with Image.open(temp_image_path) as img:
+                                        rgb_img = img.convert('RGB')  # Ensure RGB mode for JPEG
+                                        converted_image_path = os.path.splitext(temp_image_path)[0] + '.jpg'
+                                        rgb_img.save(converted_image_path, format='JPEG', quality=100)
+                                        image_paths.append(converted_image_path)
+
+                                    # Remove the original file if needed
+                                    os.remove(temp_image_path)
+
+                                except Exception as e:
+                                    st.error(f"Error converting image {file.name} to JPEG: {e}")
 
                             # Process each image and generate titles and tags using AI
                             metadata_list = []
