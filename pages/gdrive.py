@@ -55,7 +55,7 @@ def normalize_text(text):
 # Function to generate metadata for images using AI model
 def generate_metadata(model, img):
     caption = model.generate_content([
-        "Help create a specific, descriptive, and informative title for an image. The title should clearly describe the context, subject, and atmosphere of the scene, make the result into 1 line or answer only", 
+        "create a specific, descriptive, and informative title for an image. The title should clearly describe the context, subject, and atmosphere of the scene, make the result into 1 line or answer only", 
         img
     ])
     tags = model.generate_content([
@@ -70,8 +70,11 @@ def generate_metadata(model, img):
     keywords = filtered_tags.split(',')[:49]  # Limit to 49 words
     trimmed_tags = ','.join(keywords)
     
+    # Ensure no trailing period in the title
+    title = caption.text.strip().rstrip('.')
+    
     return {
-        'Title': caption.text.strip(),  # Remove leading/trailing whitespace
+        'Title': title,  # Title without trailing period
         'Tags': trimmed_tags.strip()
     }
 
